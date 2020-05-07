@@ -32,7 +32,7 @@ class utility(commands.Cog):
                 for y in self.client.walk_commands():
                     if not y.cog_name and not y.hidden:
                         cmds_desc += ('{} - {}'.format(y.name,y.help)+'\n')
-                halp.add_field(name='tip',value=f'***Use {defprefix}changeprefix to change the bot prefix***',inline=False)
+                halp.add_field(name='tip',value=f'***Use {defprefix}changeprefix to change the bot prefix\nTHIS BOT IS USING THE DRIZZI TEMPLATE FROM DRIZZYLGA1151 ON GITHUB***',inline=False)
                 await ctx.message.add_reaction(emoji='❔')
                 await ctx.send('',embed=halp)
             else:
@@ -92,7 +92,7 @@ class utility(commands.Cog):
         dpyVersion = discord.__version__
         serverCount = len(self.client.guilds)
         memberCount = len(set(self.client.get_all_members()))
-        embed = discord.Embed(title=f'{self.client.user.name} Stats', colour=msg.author.colour)
+        embed = discord.Embed(title=f'{self.client.user.name} Stats',description='This bot was created with the DRIZZI template by drizzylga1151 on github', colour=msg.author.colour)
         embed.add_field(name='Bot Version:', value=clientVersion)
         embed.add_field(name='Python Version:', value=pythonVersion)
         embed.add_field(name='Discord.Py Version', value=dpyVersion)
