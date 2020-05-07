@@ -1,0 +1,6 @@
+
+*.pyc
+Setup.py
+Data.db
+.vscode
+Data
