@@ -11,6 +11,6 @@ Everything you need is in the README.py file!
 [Check out my website!](https://drizzy.xyz)
 
 ### NOTICE
-THIS BOT IS CODED TO WORK WELL WITH LINUX UBUNTU
-IT MAY WORK WELL WITH OTHER LINUX DISTROS AND MACOS
-BUT YOU SOME COMMANDS WILL NEED TO BE EDITED TO WORK WELL WITH WINDOWS 10
+This bot is coded to  work with linux UBUNTU.
+While it may work well with other linux distros and macos,
+you will have to edit some commands for them to work with windows 10.
