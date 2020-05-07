@@ -1,5 +1,11 @@
-# Drizzi-python
-DRIZZI's SOURCE CODE
+# Drizzi
 
+## Now OPEN SOURCE!
 
-This is the source code for my discord.py Bot
+You can now see all my code as well as Host DRIZZI yourself
+
+## How to get started!
+
+Everything you need is in the README.py file!
+
+[Check out my website!](https://drizzy.xyz)
