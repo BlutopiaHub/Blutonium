@@ -2,27 +2,47 @@ import discord
 from discord.ext import commands
 import json
 import os
-import sqlite3
+import MySQLdb
 from Setup import *
 
-conn = sqlite3.connect('Data.db')
-c = conn.cursor()
 
-def Checker(**permissions):
-    original = commands.has_permissions(**permissions).predicate
-    async def extended(ctx):
-        if ctx.guild is None:
-            return False
-        return commands.is_owner() or await original(ctx)
-    return commands.check(extended)
 
 def get_prefix(client, message):
-    guildid = str(message.guild.id)
-    sql = f"SELECT * FROM prefixes WHERE id={guildid}"
-  
-    c.execute(sql)
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cursor = db.cursor()
 
-    return c.fetchone()[1]
+    guildid = str(message.guild.id)
+    sql = f"SELECT * FROM prefixes WHERE id={guildid}"  
+    cursor.execute(sql)
+    prefix = cursor.fetchone()[1]
+    db.close()
+    return prefix
+
+def getprefix(guild):
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cur = db.cursor()
+
+    guildid = str(guild.id)
+    sql = f"SELECT * FROM prefixes WHERE id={guildid}"  
+    cur.execute(sql)
+    prefix = cur.fetchone()[1]
+    db.close()
+
+    return prefix
+
+def get_blacklist():
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cursor = db.cursor()
+
+    sql = "SELECT * FROM blacklist"
+    cursor.execute(sql)
+    query = cursor.fetchall()
+    blacklist = []
+    for x in query:
+        blacklist.append(x[0])
+    db.close()
+    return blacklist
+
 
 client = commands.Bot(command_prefix=get_prefix)
 client.remove_command('help')
@@ -31,70 +51,23 @@ client.owner_id = int(ownerid)
 
 exts = []
 
+@client.event
+async def on_message(msg):
+
+    prefix = getprefix(msg.channel.guild)
+    msgc:str=msg.content
+
+    bl = get_blacklist()
+    if msg.author.id in bl:
+        if msgc.startswith(f"{prefix}"):
+            return await msg.channel.send("You have been blacklisted from using this discord bot!")
+    else:
+        await client.process_commands(msg)
+
 for f in os.listdir('./commands'):
     if f.endswith('.py'):
         d = f.replace('.py','')
         exts.append(d)
-
-@client.event
-async def on_ready():
-    print('Drizzi is Ready!')
-    print(f'logged in as {client.user}')
-
-    x = []
-
-    for guild in client.guilds:
-        x.append(guild)
-
-
-    for guild in x:
-
-        guildid = str(guild.id)
-        sqlite = f"SELECT * FROM prefixes WHERE id={guildid}"
-        c.execute(sqlite)
-
-        bruh = c.fetchone()
-
-        if bruh is None:
-
-            sql = f"INSERT INTO prefixes VALUES ({guild.id},{defprefix})"
-            c.execute(sql)
-            conn.commit()
-            print(f'Sucsessfully set prefix in {guild.name}')
-        else:
-            print(f"Guild '{guild.name}' has a prefix: {bruh[1]}")
-
-@client.event
-async def on_guild_join(guild):
-    c.execute(f"INSERT INTO prefixes VALUES ({guild.id}, 'dr/')")
-    conn.commit()
-
-@client.command(aliases=['setprefix'], help='Changes the prefix for the server',cog='moderation' )
-@commands.check(Checker(administrator=True))
-async def changeprefix(msg,*,prefix):
-
-    c.execute(f"UPDATE prefixes SET prefix = '{prefix}' WHERE id = {msg.guild.id}" )
-    conn.commit()
-
-    emb = discord.Embed(title=f'{msg.guild}', description='The prefix for this server was successfully changed!', color=discord.Colour.green())
-    emb.add_field(name='Changed to:', value=f'{prefix}')
-    await msg.channel.send(embed=emb)
-
-@client.event
-async def on_message(msg):
-
-    messagec : str = msg.content
-
-    if msg.guild is None:
-        return print(f'{msg.author}-{messagec}')
-
-    if messagec.startswith('<@'):
-
-        if client.user in msg.mentions:
-            await msg.add_reaction('❤️')
-            return await msg.channel.send(f'Hi! My prefix for this server is ``{get_prefix(client,msg)}``')
-
-    await client.process_commands(msg)
 
 if __name__ == '__main__':
 
@@ -103,6 +76,6 @@ if __name__ == '__main__':
             client.load_extension(f'commands.{ext}')
             print(ext)
         except Exception as error:
-            print(f'[CONSOLE] {ext} CANT BE LOADED: {error}')
+            print(f'[CONSOLE] {ext} CANT BE LOADED: {error}')            
 
 client.run(TOKEN)

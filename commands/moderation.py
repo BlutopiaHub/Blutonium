@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
-
+import MySQLdb
+from Setup import *
 
 def Checker(**permissions):
     original = commands.has_permissions(**permissions).predicate
@@ -10,12 +11,36 @@ def Checker(**permissions):
         return commands.is_owner() or await original(ctx)
     return commands.check(extended)
 
+
+def update_prefix(guild, prefix):
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cur = db.cursor()
+
+    sql = f"UPDATE prefixes SET prefix = '{prefix}' WHERE id = {guild.id}" 
+
+    cur.execute(sql)
+    db.commit()
+    db.close()
+
+
 class moderation(commands.Cog):
     """
     Standard moderation commands
     """
     def __init__(self, client):
         self.client=client
+        
+
+    @commands.command(aliases=['setprefix'], help='Changes the prefix for the server')
+    @commands.check(Checker(administrator=True))
+    async def changeprefix(self,msg,*,prefix):
+
+        update_prefix(msg.guild,prefix)
+
+        emb = discord.Embed(title=f'{msg.guild}', description='The prefix for this server was successfully changed!', color=discord.Colour.green())
+        emb.add_field(name='Changed to:', value=f'{prefix}')
+        await msg.channel.send(embed=emb)
+
 
     @commands.command(help='Mute any user')
     @commands.check(Checker(manage_roles=True))

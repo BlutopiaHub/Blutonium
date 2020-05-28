@@ -11,25 +11,26 @@ class logger(commands.Cog):
         self.client = client
         self.blacklist = [264445053596991498,336642139381301249]
 
-    @commands.Cog.listener()
-    async def on_user_update(self,bus:discord.Member, aus:discord.Member):
+    #@commands.Cog.listener()
+    #async def on_user_update(self,bus:discord.Member, aus:discord.Member):
 
-        if bus.avatar_url == aus.avatar_url:
-            pass 
-        else:
-            try:
-                dst = os.path.join(str(os.getcwd()),f'Data/images/{bus.id}.png')
-                dstg = os.path.join(str(os.getcwd()),f'Data/images/{bus.id}.gif')
-            except:
-                return
+        #if bus.avatar_url == aus.avatar_url:
+       #     pass 
+       # else:
+      #      try:
+      #          dst = os.path.join(str(os.getcwd()),f'Data/images/{bus.id}.png')
+     #           dstg = os.path.join(str(os.getcwd()),f'Data/images/{bus.id}.gif')
+     #       except:
+        #        return
 
-            try:
-                if bus.is_avatar_animated():
-                    os.remove(dstg)
-                else:
-                    os.remove(dst)
-            except:
-                return
+        #    try:
+         #       if bus.is_avatar_animated():
+          #          os.remove(dstg)
+         #       else:
+      #              os.remove(dst)
+      #      except:
+     #           return
+
     @commands.Cog.listener()
     async def on_voice_state_update(self,usr : discord.Member,bfv : discord.VoiceState,afv:discord.VoiceState):
 

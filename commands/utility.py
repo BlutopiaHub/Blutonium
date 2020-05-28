@@ -2,9 +2,23 @@ import discord, datetime, time
 from discord.ext import commands
 import psutil
 import platform
+import MySQLdb
 import operator
 from discord.utils import get
 from Setup import * 
+
+
+def get_prefix(guild):
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cur = db.cursor()
+
+    guildid = str(guild.id)
+    sql = f"SELECT * FROM prefixes WHERE id={guildid}"  
+    cur.execute(sql)
+    prefix = cur.fetchone()[1]
+    db.close()
+
+    return prefix
 
 
 class utility(commands.Cog):
@@ -19,11 +33,13 @@ class utility(commands.Cog):
     @commands.command(help='Help command to get started on using the bot!')
     async def help(self,ctx,*cog):
         """Gets all cogs and commands of mine."""
+        prefix = get_prefix(ctx.guild)
+
         try:
             if not cog:
                 """Cog listing.  What more?"""
                 halp=discord.Embed(title='Help!',
-                                description='Use `dr/help *category*` to see all the commands!')
+                                description=f'Use `{prefix}help *category*` to see all the commands!')
                 cogs_desc = ''
                 for x in self.client.cogs:
                     cogs_desc += f'**{x}** - {self.client.cogs[x].__doc__}\n'
@@ -32,7 +48,7 @@ class utility(commands.Cog):
                 for y in self.client.walk_commands():
                     if not y.cog_name and not y.hidden:
                         cmds_desc += ('{} - {}'.format(y.name,y.help)+'\n')
-                halp.add_field(name='tip',value=f'***Use {defprefix}changeprefix to change the bot prefix\nTHIS BOT IS USING THE DRIZZI TEMPLATE FROM DRIZZYLGA1151 ON GITHUB***',inline=False)
+                halp.add_field(name='tip',value=f'***Use {prefix}changeprefix to change the bot prefix***',inline=False)
                 await ctx.message.add_reaction(emoji='❔')
                 await ctx.send('',embed=halp)
             else:
@@ -88,11 +104,11 @@ class utility(commands.Cog):
     @commands.command(aliases=['stats','binfo'], help='Gathers and displays Bot info')
     async def botinfo(self,msg):
         pythonVersion = platform.python_version()
-        clientVersion = '1.8.4'
+        clientVersion = '1.9.1'
         dpyVersion = discord.__version__
         serverCount = len(self.client.guilds)
         memberCount = len(set(self.client.get_all_members()))
-        embed = discord.Embed(title=f'{self.client.user.name} Stats',description='This bot was created with the DRIZZI template by drizzylga1151 on github', colour=msg.author.colour)
+        embed = discord.Embed(title=f'{self.client.user.name} Stats', colour=msg.author.colour)
         embed.add_field(name='Bot Version:', value=clientVersion)
         embed.add_field(name='Python Version:', value=pythonVersion)
         embed.add_field(name='Discord.Py Version', value=dpyVersion)

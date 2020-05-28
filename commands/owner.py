@@ -8,7 +8,39 @@ import psutil
 import os
 import cpuinfo
 import speedtest
+import MySQLdb
+from Setup import *
 
+def get_blacklist():
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cursor = db.cursor()
+
+    sql = "SELECT * FROM blacklist"
+    cursor.execute(sql)
+    query = cursor.fetchall()
+    blacklist = []
+    for x in query:
+        blacklist.append(x[0])
+    db.close()
+    return blacklist
+
+def blacklist_user(id):
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cursor = db.cursor()
+
+    sql = f"INSERT INTO blacklist VALUES ({id})"
+    cursor.execute(sql)
+    db.commit()
+    db.close()
+
+def unblacklist_user(id):
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cursor = db.cursor()
+
+    sql = f"DELETE FROM blacklist WHERE id={id}"
+    cursor.execute(sql)
+    db.commit()
+    db.close()
 
 class owner(commands.Cog):
 
@@ -18,6 +50,26 @@ class owner(commands.Cog):
     
     def __init__(self, client):
         self.client=client
+
+    @commands.command(aliases=['bl','cban'],help="Bans a user from using commands on this discord bot")
+    @commands.is_owner()
+    async def blacklist(self,msg,user:discord.Member):
+
+        userid = user.id
+        bl = blacklist_user(userid)
+        await msg.channel.send(f"✅ **User {user} was successfully blacklisted**")
+        
+
+    @commands.command(aliases=['ubl','cuban'],help="Unbans a user from using commands on this discord bot")
+    @commands.is_owner()
+    async def unblacklist(self,msg,user:discord.Member):
+
+        userid = user.id
+        ubl = unblacklist_user(userid)
+        await msg.channel.send(f"✅ **User {user} was successfully unblacklisted**")
+
+
+
 
     @commands.command(aliases=['sys'],help='Shows Information about the system that the bot is running on')
     @commands.is_owner()

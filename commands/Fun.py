@@ -10,7 +10,7 @@ from random import randrange
 import requests
 from Setup import *
 import shutil
-import twitch
+##import twitch
 import humanize as h
 
 class fun(commands.Cog):
@@ -19,7 +19,7 @@ class fun(commands.Cog):
     """
     def __init__(self, client):
         self.client=client
-        self.helix = twitch.Helix(twitchkey, use_cache=True)
+        #self.helix = twitch.Helix(twitchkey, use_cache=True)
         self.hypix = HPapikey
 
     
@@ -74,36 +74,36 @@ class fun(commands.Cog):
         await msg.send(embed=emb)
 
 
-    @commands.command(aliases=['ttv'], help='Fetch and display a twitch users profile')
-    async def twitch(self,msg, user):
+    #@commands.command(aliases=['ttv'], help='Fetch and display a twitch users profile')
+    #async def twitch(self,msg, user):
 
-        ttv = self.helix.user(user)
-        displayname = ttv.display_name
-    
-        emb = discord.Embed(
-            title=displayname
-        )
+      #  ttv = self.helix.user(user)
+   #     displayname = ttv.display_name
+   # 
+  #      emb = discord.Embed(
+  #          title=displayname
+  #      )
         
+#
+   #     def CheckforLive(ttv):
 
-        def CheckforLive(ttv):
+      #      if ttv.is_live:
+      #          return '🔴 Live'
+#
+      #      else:
+       #         return '🔵 Offline'
+#
 
-            if ttv.is_live:
-                return '🔴 Live'
-
-            else:
-                return '🔵 Offline'
-
-
-        emb.set_thumbnail(url=ttv.profile_image_url)
-        emb.add_field(name='Followers', value=ttv.followers().total)
-        emb.add_field(name='Following', value=ttv.following().total)
-        emb.add_field(name='Status', value=CheckforLive(ttv))
-        print(ttv.email)
-        if ttv.is_live:
-            emb.add_field(name='Stream', value=f'[{ttv.stream.title}](https://twitch.tv/{ttv.display_name})')
-            emb.add_field(name='Viewers', value=ttv.stream.viewer_count)
+      #  emb.set_thumbnail(url=ttv.profile_image_url)
+     #   emb.add_field(name='Followers', value=ttv.followers().total)
+     #   emb.add_field(name='Following', value=ttv.following().total)
+     #   emb.add_field(name='Status', value=CheckforLive(ttv))
+       # print(ttv.email)
+      #  if ttv.is_live:
+        #    emb.add_field(name='Stream', value=f'[{ttv.stream.title}](https://twitch.tv/{ttv.display_name})')
+      #      emb.add_field(name='Viewers', value=ttv.stream.viewer_count)
             
-        await msg.channel.send(embed=emb)
+       # await msg.channel.send(embed=emb)
 
     @commands.command(aliases=['av'], help='Shows user avatar')
     async def avatar(self,msg,*args):
