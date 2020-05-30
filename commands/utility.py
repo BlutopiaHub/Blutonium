@@ -104,7 +104,7 @@ class utility(commands.Cog):
     @commands.command(aliases=['stats','binfo'], help='Gathers and displays Bot info')
     async def botinfo(self,msg):
         pythonVersion = platform.python_version()
-        clientVersion = '1.9.1'
+        clientVersion = '1.11'
         dpyVersion = discord.__version__
         serverCount = len(self.client.guilds)
         memberCount = len(set(self.client.get_all_members()))
@@ -256,6 +256,15 @@ class utility(commands.Cog):
         embed.set_thumbnail(url=member.avatar_url)
 
         await msg.channel.send(embed=embed)
+
+
+    @commands.command(aliases=["date","datetime","time"], help="Show the current date and time")
+    async def day(self,ctx):
+        today = datetime.datetime.today().strftime('%Y-%h-%d %H:%M:%S')
+
+        await ctx.send(today)
+
+
 
 def setup(client):
     client.add_cog(utility(client))
