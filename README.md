@@ -1,8 +1,8 @@
-# Drizzi
+# Blutonium
 
 ## Now OPEN SOURCE!
 
-You can now see all my code as well as Host DRIZZI yourself
+You can now see all my code as well as Host BLUTONIUM yourself
 
 ## How to get started!
 
