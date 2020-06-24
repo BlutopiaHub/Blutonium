@@ -1,13 +1,9 @@
 import discord
 from discord.ext import commands
 from discord.utils import get
-import ast
-import platform
 import humanize as h
-import psutil
-import os
-import cpuinfo
-import speedtest
+import psutil, platform, ast
+import os, cpuinfo, speedtest
 import MySQLdb
 from Setup import *
 
@@ -134,7 +130,7 @@ class owner(commands.Cog,name='Owner'):
             exts = []
             sucessful = []
 
-            for f in os.listdir('./commands'):
+            for f in os.listdir('./extensions
                 if f.endswith('.py'):
                     d = f.replace('.py','')
                     exts.append(d)
