@@ -1,12 +1,11 @@
 import discord, datetime, time
-from discord.ext import commands
-import psutil
-import platform
-import MySQLdb
-import operator
+from discord.ext import commands, menus
+import psutil, operator, os
+import requests, shutil
+import random, platform, MySQLdb
 from discord.utils import get
+import inspect
 from Setup import * 
-
 
 def get_prefix(guild):
     db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
@@ -20,8 +19,7 @@ def get_prefix(guild):
 
     return prefix
 
-
-class utility(commands.Cog):
+class utility(commands.Cog,name='Utility'):
     """
     Random Useful commands
     """
@@ -30,6 +28,7 @@ class utility(commands.Cog):
         self.sniped = {}
         self.clientid = clientid
 
+        
     @commands.command(help='Help command to get started on using the bot!')
     async def help(self,ctx,*cog):
         """Gets all cogs and commands of mine."""
@@ -99,12 +98,10 @@ class utility(commands.Cog):
         await msg.channel.send(embed=emb)
     
 
-
-
-    @commands.command(aliases=['stats','binfo'], help='Gathers and displays Bot info')
+    @commands.command(aliases=['stats','binfo','about'], help='Gathers and displays Bot info')
     async def botinfo(self,msg):
         pythonVersion = platform.python_version()
-        clientVersion = '1.11'
+        clientVersion = '1.12'
         dpyVersion = discord.__version__
         serverCount = len(self.client.guilds)
         memberCount = len(set(self.client.get_all_members()))
@@ -147,8 +144,6 @@ class utility(commands.Cog):
         emb = discord.Embed(title = f'{stat} {Name}')
         await msg.channel.send(embed=emb)
 
-
-
     @commands.command(aliases=['pong'], help= 'Shows Bot latency')
     async def ping(self,msg):
         time_1 = time.perf_counter()
@@ -156,6 +151,37 @@ class utility(commands.Cog):
         time_2 = time.perf_counter()
         ping = round((time_2-time_1)*1000)
         await msg.send(f"⏳ Pong! My ping is `{ping}ms`")
+
+    @commands.command(aliases=['sic','sav'])
+    async def servericon(self,msg:commands.Context):
+
+        server = msg.guild.icon_url
+
+        servericon = f'{msg.guild.id}.gif'
+
+        pth = os.getcwd()
+        dst = os.path.join(str(pth),'Data/images')
+        src = os.path.join(str(pth),servericon)
+        src2 = os.path.join(dst,servericon)
+
+        images = os.listdir(dst)
+
+        async def sendav(src,src2,img):
+            shutil.move(src2,pth)
+            await msg.channel.send(file=discord.File(servericon))
+            shutil.move(src,dst)
+
+        pull = requests.get(server, allow_redirects=True)
+
+        if servericon in images:
+            await sendav(src,src2,servericon)
+            return
+        else:
+            open(servericon,'wb').write(pull.content)
+            shutil.move(src,dst)
+
+        await sendav(src,src2,servericon)
+        return
 
     @commands.command(aliases=['sinfo', 'guild'], help='Gathers and Displays server info')
     async def serverinfo(self, msg):
@@ -263,6 +289,20 @@ class utility(commands.Cog):
         today = datetime.datetime.today().strftime('%Y-%h-%d %H:%M:%S')
 
         await ctx.send(today)
+    
+    @commands.command(aliases=['rmember'])
+    async def randommember(self,ctx:commands.Context):
+
+        members = ctx.guild.members
+        member:discord.Member = random.choice(members)
+
+        emb = discord.Embed(title=member.name)
+
+        emb.set_thumbnail(url=member.avatar_url)
+        emb.add_field(name='id', value=f'{member.id}')
+
+        await ctx.send(embed=emb)
+        
 
 
 

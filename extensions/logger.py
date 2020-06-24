@@ -2,42 +2,132 @@ import discord
 from discord.ext import commands
 from discord.utils import get
 import os 
+import MySQLdb
+from Setup import *
 
-class logger(commands.Cog):
+
+def Checker(**permissions):
+    original = commands.has_permissions(**permissions).predicate
+    async def extended(ctx):
+        if ctx.guild is None:
+            return False
+        return commands.is_owner() or await original(ctx)
+    return commands.check(extended)
+
+def getlogdata(guild):
+
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cur = db.cursor()
+
+    guildid = str(guild.id)
+    sql = f"SELECT * FROM logs WHERE id={guildid}"
+    cur.execute(sql)
+    data = cur.fetchone()
+
+    if data is None:
+        chan = get(guild.channels, name='logs')
+        if chan is None:
+            chanid = 0000000000000000000
+        else:
+            chanid = chan.id
+        sql = f"INSERT INTO logs VALUES ({guildid}, True,{chanid})"
+        cur.execute(sql)
+        data = (guildid,True,chanid)
+
+    db.commit()
+    db.close()
+
+    return data
+
+def togglelogs(guild):
+
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cur = db.cursor()
+
+    guildid = str(guild.id)
+    sql = f"SELECT enabled FROM logs WHERE id={guildid}"
+    cur.execute(sql)
+
+    islogs = cur.fetchone()[0]
+
+    if islogs:
+        sql = f"UPDATE logs SET enabled = False WHERE id = {guildid}"
+        cur.execute(sql)
+        db.commit()
+        
+    else:
+        sql = f"UPDATE logs SET enabled = True WHERE id = {guildid}"
+        cur.execute(sql)
+        db.commit()
+
+    sql = f"SELECT enabled FROM logs WHERE id={guildid}"
+    cur.execute(sql)
+
+    islogs = cur.fetchone()[0]    
+
+    db.close()
+
+    return islogs  
+
+def setlogchannel(guild,channelid):
+
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cur = db.cursor()   
+
+    guildid = str(guild.id)
+    sql = f"UPDATE logs SET channel={channelid} WHERE id = {guildid}"
+    cur.execute(sql)
+
+    db.commit()
+    db.close()
+
+    return 0
+    
+class logger(commands.Cog,name='Logger'):
     """
     Listeners for logging (Make a channel called logs!)
     """
     def __init__(self, client : commands.Bot):
         self.client = client
-        self.blacklist = [264445053596991498,336642139381301249]
+        self.qualified_name
 
-    #@commands.Cog.listener()
-    #async def on_user_update(self,bus:discord.Member, aus:discord.Member):
+    @commands.command(help="Set the logs channel")
+    @commands.has_permissions(manage_channels=True)
+    async def logchannel(self,ctx,channel:discord.TextChannel):
 
-        #if bus.avatar_url == aus.avatar_url:
-       #     pass 
-       # else:
-      #      try:
-      #          dst = os.path.join(str(os.getcwd()),f'Data/images/{bus.id}.png')
-     #           dstg = os.path.join(str(os.getcwd()),f'Data/images/{bus.id}.gif')
-     #       except:
-        #        return
+        try:
+            res = setlogchannel(ctx.guild, channel.id)
+            await ctx.send(f"✅ Log channel has been set to #{channel}")
+        except Exception as err:
+            await ctx.send(f"❌ Failled to set logs channel: {err}")
+        
 
-        #    try:
-         #       if bus.is_avatar_animated():
-          #          os.remove(dstg)
-         #       else:
-      #              os.remove(dst)
-      #      except:
-     #           return
 
+    @commands.command(help="Turn logs On or off")
+    @commands.has_permissions(manage_channels=True)
+    async def togglelogs(self, ctx):
+
+        d = togglelogs(ctx.guild)
+        
+        if d:
+            await ctx.send("✅ Logs have been enabled")
+        else:
+            await ctx.send("❌ Logs have been disabled")
+
+    
     @commands.Cog.listener()
     async def on_voice_state_update(self,usr : discord.Member,bfv : discord.VoiceState,afv:discord.VoiceState):
 
         if bfv.channel is None:
+            loggerdata = getlogdata(afv.channel.guild)
+        else:
+            loggerdata = getlogdata(bfv.channel.guild)
+
+        if loggerdata[1]:
             pass
-        elif bfv.channel.guild.id in self.blacklist:
+        else:
             return
+
 
         if afv.channel == bfv.channel:
             pass
@@ -50,7 +140,7 @@ class logger(commands.Cog):
             emb.add_field(name = "Update", value = f"**{bfv.channel}** -> **{afv.channel}**")
             emb.set_thumbnail(url=usr.avatar_url)
             try:   
-                channel = get(bfv.channel.guild.channels, name='logs')
+                channel = get(bfv.channel.guild.channels, id=loggerdata[2])
                 await channel.send(embed = emb)
                 return
             except:
@@ -76,7 +166,7 @@ class logger(commands.Cog):
                 emb.set_thumbnail(url=usr.avatar_url)
 
             try:
-                channel = get(bfv.channel.guild.channels, name='logs')
+                channel = get(bfv.channel.guild.channels, id=loggerdata[2])
                 await channel.send(embed = emb)   
                 return
             except: 
@@ -102,7 +192,7 @@ class logger(commands.Cog):
                 )
                 emb.set_thumbnail(url=usr.avatar_url)
             try:
-                channel = get(bfv.channel.guild.channels, name='logs')
+                channel = get(bfv.channel.guild.channels, id=loggerdata[2])
                 await channel.send(embed = emb)   
                 return
             except: 
@@ -112,7 +202,11 @@ class logger(commands.Cog):
     @commands.Cog.listener()
     async def on_message_delete(self, msg):
 
-        if msg.guild.id in self.blacklist:
+        loggerdata = getlogdata(msg.guild)
+
+        if loggerdata[1]:
+            pass
+        else:
             return
 
         emb = discord.Embed(
@@ -126,17 +220,21 @@ class logger(commands.Cog):
         emb.set_thumbnail(url=msg.author.avatar_url)
 
         try:
-            chan : discord.TextChannel = get(msg.guild.channels, name="logs")
+            chan : discord.TextChannel = get(msg.guild.channels, id=loggerdata[2])
             await chan.send(embed=emb)
         except:
             return
       
-
     @commands.Cog.listener()
     async def on_message_edit(self,bmsg,amsg):
 
-        if bmsg.guild.id in self.blacklist:
+        loggerdata = getlogdata(bmsg.guild)
+
+        if loggerdata[1]:
+            pass
+        else:
             return
+
 
         if amsg.author == self.client.user:
             return
@@ -152,7 +250,7 @@ class logger(commands.Cog):
         emb.set_thumbnail(url=bmsg.author.avatar_url)
     
         try:
-            chan : discord.TextChannel = get(bmsg.guild.channels, name="logs")
+            chan : discord.TextChannel = get(bmsg.guild.channels, id=loggerdata[2])
             await chan.send(embed=emb)
         except:
             return
@@ -160,7 +258,11 @@ class logger(commands.Cog):
     @commands.Cog.listener()
     async def on_member_ban(self,guild,banmember):
 
-        if guild.id in self.blacklist:
+        loggerdata = getlogdata(guild)
+
+        if loggerdata[1]:
+            pass
+        else:
             return
 
         bans = await guild.bans()
@@ -184,7 +286,7 @@ class logger(commands.Cog):
         emb.add_field(name='Reason', value=f'{reason}')
 
         try:
-            chan : discord.TextChannel = get(guild.channels, name="logs")
+            chan : discord.TextChannel = get(guild.channels, id=loggerdata[2])
             await chan.send(embed=emb)
         except:
             return
@@ -192,10 +294,14 @@ class logger(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_unban(self,guild, banmember):
-            
-        if guild.id in self.blacklist:
-            return
 
+        loggerdata = getlogdata(guild)
+
+        if loggerdata[1]:
+            pass
+        else:
+            return
+            
         bans = await guild.bans()
 
         Member_name, Member_disc = str(banmember).split('#')
@@ -217,7 +323,7 @@ class logger(commands.Cog):
         emb.add_field(name='Reason for initial ban', value=f'{reason}')
 
         try:
-            chan : discord.TextChannel = get(guild.channels, name="logs")
+            chan : discord.TextChannel = get(guild.channels, id=loggerdata[2])
             await chan.send(embed=emb)
         except:
             return

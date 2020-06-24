@@ -8,7 +8,7 @@ You can now see all my code as well as Host DRIZZI yourself
 
 Everything you need is in the README.py file!
 
-[Check out my website!](https://drizzy.xyz)
+[Check out my website!](https://bluez.xyz)
 
 ### NOTICE
 This bot is coded to  work with linux UBUNTU.

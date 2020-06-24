@@ -4,7 +4,7 @@ import json
 import os
 import MySQLdb
 from Setup import *
-
+import random
 
 
 def get_prefix(client, message):
@@ -54,8 +54,31 @@ exts = []
 @client.event
 async def on_message(msg):
 
+    if msg.channel is discord.DMChannel:
+        print(msg.content)
+
     prefix = getprefix(msg.channel.guild)
     msgc:str=msg.content
+
+
+    if msgc.startswith('<@'):
+
+        if client.user in msg.mentions:
+
+            responses = [
+            f'Hey! my prefix for this server is `{prefix}` ',
+            f'No `{prefix}`',
+            f'WHAT DO YOU WA- .. uhh i mean hi. my prefix is `{prefix}`',
+            f'Oi mate heres ya prefix, cheers! `{prefix}`',
+            f'We\'re sorry, {client.user} is unavalible right now. Please use this prefix `{prefix}`',
+            f'imagine forgeting your prefix, `{prefix}`',
+            f'TIP: use `{prefix}setprefix (whatever u want)` to change your prefix'
+            ]
+
+            resonse = random.choice(responses)
+
+            await msg.channel.send(resonse)
+
 
     bl = get_blacklist()
     if msg.author.id in bl:
@@ -64,7 +87,7 @@ async def on_message(msg):
     else:
         await client.process_commands(msg)
 
-for f in os.listdir('./commands'):
+for f in os.listdir('./extensions'):
     if f.endswith('.py'):
         d = f.replace('.py','')
         exts.append(d)
@@ -73,7 +96,7 @@ if __name__ == '__main__':
 
     for ext in exts:
         try:
-            client.load_extension(f'commands.{ext}')
+            client.load_extension(f'extensions.{ext}')
             print(ext)
         except Exception as error:
             print(f'[CONSOLE] {ext} CANT BE LOADED: {error}')            

@@ -29,7 +29,7 @@ def set_prefix(guild):
     db.commit()
     db.close()
 
-class events(commands.Cog):
+class events(commands.Cog,name='Events'):
     """
     Events and listeners for the bot
     """

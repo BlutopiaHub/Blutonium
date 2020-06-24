@@ -42,7 +42,7 @@ def unblacklist_user(id):
     db.commit()
     db.close()
 
-class owner(commands.Cog):
+class owner(commands.Cog,name='Owner'):
 
     """
     Commands restricted to the bot owner
@@ -75,11 +75,11 @@ class owner(commands.Cog):
     @commands.is_owner()
     async def system(self,msg):
 
-        Speed = speedtest.Speedtest()
-        Speed.get_best_server()
+        #Speed = speedtest.Speedtest()
+        #Speed.get_best_server()
 
-        upload = Speed.upload(threads=None)
-        download = Speed.download(threads=None)
+        #upload = Speed.upload(threads=None)
+        #download = Speed.download(threads=None)
 
         try:
             proc = psutil.Process()
@@ -100,7 +100,7 @@ class owner(commands.Cog):
             em.add_field(name='Host Name',value=f"{platform.node()}",inline=False)
             em.add_field(name="Process Memory usage",value=f"{h.naturalsize(mem.rss)} / {memory} MB",inline=True)
             em.add_field(name="Process CPU usage",value=f"{cpu_per}%",inline=True)
-            em.add_field(name="System Connection info",value=f"{h.naturalsize(download)}/s Down {h.naturalsize(upload)}/s Up",inline=True)
+            #em.add_field(name="System Connection info",value=f"{h.naturalsize(download)}/s Down {h.naturalsize(upload)}/s Up",inline=True)
             
 
             await msg.send(embed=em)
@@ -111,7 +111,7 @@ class owner(commands.Cog):
     @commands.is_owner()
     async def load(self,msg,ext):
         try:
-            self.client.load_extension(f'commands.{ext}')
+            self.client.load_extension(f'extensions.{ext}')
             await msg.channel.send(f'`{ext}` Was successfully loaded')
         except Exception as error:
             await msg.channel.send(f'there was an error loading `{ext}`: {error}')
@@ -120,7 +120,7 @@ class owner(commands.Cog):
     @commands.is_owner()
     async def unload(self,msg,ext):
         try:
-            self.client.unload_extension(f'commands.{ext}')
+            self.client.unload_extension(f'extensions.{ext}')
             await msg.channel.send(f'`{ext}` Was successfully unloaded.')
         except Exception as error:
             await msg.channel.send(f'there was an error unloading `{ext}`: {error}')
@@ -128,9 +128,31 @@ class owner(commands.Cog):
     @commands.command(aliases=['rlc'], help='reloads any cog')
     @commands.is_owner()
     async def reload(self,msg,ext):
+
+        if ext == "all":
+
+            exts = []
+            sucessful = []
+
+            for f in os.listdir('./commands'):
+                if f.endswith('.py'):
+                    d = f.replace('.py','')
+                    exts.append(d)
+
+            for ext in exts:
+                try:
+                    self.client.unload_extension(f'extensions.{ext}')
+                    self.client.load_extension(f'extensions.{ext}')
+                    sucessful.append(ext)
+                except Exception as error:
+                    print(error)
+                    return await msg.channel.send(f'there was an error reloading `{ext}`: Check console')  
+          
+            return await msg.send(f"`{', '.join(sucessful)}` Were sucessfully reloaded")
+
         try:
-            self.client.unload_extension(f'commands.{ext}')
-            self.client.load_extension(f'commands.{ext}')
+            self.client.unload_extension(f'extensions.{ext}')
+            self.client.load_extension(f'extensions.{ext}')
             await msg.channel.send(f'`{ext}` Was successfully reloaded.')
         except Exception as error:
             await msg.channel.send(f'there was an error reloading `{ext}`: {error}')

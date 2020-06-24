@@ -4,11 +4,12 @@ import MySQLdb
 from Setup import *
 
 def Checker(**permissions):
-    original = commands.has_permissions(**permissions).predicate
+    original : dict = commands.has_permissions(**permissions).predicate
     async def extended(ctx):
         if ctx.guild is None:
             return False
         return commands.is_owner() or await original(ctx)
+
     return commands.check(extended)
 
 
@@ -23,7 +24,7 @@ def update_prefix(guild, prefix):
     db.close()
 
 
-class moderation(commands.Cog):
+class moderation(commands.Cog,name="Moderation"):
     """
     Standard moderation commands
     """
@@ -32,7 +33,7 @@ class moderation(commands.Cog):
         
 
     @commands.command(aliases=['setprefix'], help='Changes the prefix for the server')
-    @commands.check(Checker(administrator=True))
+    @commands.has_permissions(administrator=True)
     async def changeprefix(self,msg,*,prefix):
 
         update_prefix(msg.guild,prefix)
@@ -43,7 +44,7 @@ class moderation(commands.Cog):
 
 
     @commands.command(help='Mute any user')
-    @commands.check(Checker(manage_roles=True))
+    @commands.has_permissions(manage_roles=True)
     async def mute(self,msg,member,*reasons):
 
         reason = ' '.join(reasons)
@@ -69,7 +70,7 @@ class moderation(commands.Cog):
             await msg.channel.send(f'❌ `{member}` Could not be muted: {error} ')
 
     @commands.command(help='unmute any user')
-    @commands.check(Checker(manage_roles=True))
+    @commands.has_permissions(manage_roles=True)
     async def unmute(self,msg):
 
 
@@ -107,14 +108,14 @@ class moderation(commands.Cog):
 
 
     @commands.command(aliases=['clear'], help='deletes specified number of messages')
-    @commands.check(Checker(manage_messages=True))
-    async def purge(self,msg, ammount=5):
+    @commands.has_permissions(manage_messages=True)
+    async def purge(self,msg:commands.Context, ammount=5):
 
         if ammount == 0:
             return await msg.channel.send('❌ You cant clear 0 messages')
         try:
             await msg.channel.purge(limit=ammount)
-            await msg.channel.send(f'✅ Succesfully purged `{ammount}` messages')
+            await msg.send(f'✅ Succesfully purged `{ammount}` messages',delete_after=5)
         except Exception as err:
             await msg.channel.send(err)
 
@@ -125,7 +126,7 @@ class moderation(commands.Cog):
              await msg.channel.send('❌ **You dont have permissions to use this command!**')
 
     @commands.command(aliases=['arole'], help='Adds any role to a user')
-    @commands.check(Checker(manage_roles=True))
+    @commands.has_permissions(manage_roles=True)
     async def addrole(self,msg,member,*,rolename):
 
         for user in msg.message.mentions:
@@ -141,7 +142,7 @@ class moderation(commands.Cog):
                     await msg.channel.send(err)
 
     @commands.command(aliases=['remrole', 'rrole'],help='removes any role from a user')
-    @commands.check(Checker(manage_roles=True))
+    @commands.has_permissions(manage_roles=True)
     async def removerole(self,msg,member,*,rolename):
 
         for user in msg.message.mentions:
@@ -169,7 +170,7 @@ class moderation(commands.Cog):
              await ctx.channel.send('❌ **You dont have permissions to use this command!**')
 
     @commands.command(help='kicks any user from the server')
-    @commands.check(Checker(kick_members=True))
+    @commands.has_permissions(kick_members=True)
     async def kick(self, msg,member,*,reason):
 
         for user in msg.message.mentions:
@@ -183,7 +184,7 @@ class moderation(commands.Cog):
             await msg.channel.send(f'❌ {member} could not be kicked: {err}')
 
     @commands.command(help='Strike the BAN HAMMER')
-    @commands.check(Checker(ban_members=True))
+    @commands.has_permissions(ban_members=True)
     async def ban(self,msg,member,*reasons):
 
         reason = ' '.join(reasons)
@@ -203,7 +204,7 @@ class moderation(commands.Cog):
             await msg.channel.send(f'❌ {member} could not be banned: {err}')
 
     @commands.command(help='Unbans any banned user ')
-    @commands.check(Checker(ban_members=True))
+    @commands.has_permissions(ban_members=True)
     async def unban(self, msg,*,member):
 
         banned_users = await msg.guild.bans()
