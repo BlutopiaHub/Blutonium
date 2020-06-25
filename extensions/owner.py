@@ -130,7 +130,7 @@ class owner(commands.Cog,name='Owner'):
             exts = []
             sucessful = []
 
-            for f in os.listdir('./extensions
+            for f in os.listdir('./extensions'):
                 if f.endswith('.py'):
                     d = f.replace('.py','')
                     exts.append(d)
