@@ -1,8 +1,7 @@
 import discord
 from discord.ext import commands
 from discord.utils import get
-import os 
-import MySQLdb
+import MySQLdb, os, datetime,pytz
 from Setup import *
 
 
@@ -85,7 +84,7 @@ def setlogchannel(guild,channelid):
     
 class logger(commands.Cog,name='Logger'):
     """
-    Listeners for logging (Make a channel called logs!)
+    Listeners for logging 
     """
     def __init__(self, client : commands.Bot):
         self.client = client
@@ -96,7 +95,7 @@ class logger(commands.Cog,name='Logger'):
     async def logchannel(self,ctx,channel:discord.TextChannel):
 
         try:
-            res = setlogchannel(ctx.guild, channel.id)
+            setlogchannel(ctx.guild, channel.id)
             await ctx.send(f"✅ Log channel has been set to #{channel}")
         except Exception as err:
             await ctx.send(f"❌ Failled to set logs channel: {err}")
@@ -118,9 +117,10 @@ class logger(commands.Cog,name='Logger'):
     @commands.Cog.listener()
     async def on_voice_state_update(self,usr : discord.Member,bfv : discord.VoiceState,afv:discord.VoiceState):
 
-        if bfv.channel is None:
+
+        try:
             loggerdata = getlogdata(afv.channel.guild)
-        else:
+        except:
             loggerdata = getlogdata(bfv.channel.guild)
 
         if loggerdata[1]:
@@ -134,7 +134,8 @@ class logger(commands.Cog,name='Logger'):
         else:
             emb = discord.Embed(
                 title = f'{usr}',
-                description = 'User changed voice channels'
+                description = 'User changed voice channels',
+                timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
             )
 
             emb.add_field(name = "Update", value = f"**{bfv.channel}** -> **{afv.channel}**")
@@ -153,7 +154,8 @@ class logger(commands.Cog,name='Logger'):
 
                 emb = discord.Embed(
                 title = f'{usr}',
-                description = 'User server muted'
+                description = 'User server muted',
+                timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
                 )
                 emb.set_thumbnail(url=usr.avatar_url)
                 
@@ -161,7 +163,8 @@ class logger(commands.Cog,name='Logger'):
                 
                 emb = discord.Embed(
                 title = f'{usr}',
-                description = 'User was Unserver-muted'
+                description = 'User was Unserver-muted',
+                timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
                 )
                 emb.set_thumbnail(url=usr.avatar_url)
 
@@ -180,7 +183,8 @@ class logger(commands.Cog,name='Logger'):
 
                 emb = discord.Embed(
                 title = f'{usr}',
-                description = 'User was server Deafened'
+                description = 'User was server Deafened',
+                timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
                 )
                 emb.set_thumbnail(url=usr.avatar_url)
                 
@@ -188,7 +192,8 @@ class logger(commands.Cog,name='Logger'):
                 
                 emb = discord.Embed(
                 title = f'{usr}',
-                description = 'User was Unserver-deafened'
+                description = 'User was Unserver-deafened',
+                timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
                 )
                 emb.set_thumbnail(url=usr.avatar_url)
             try:
@@ -212,7 +217,8 @@ class logger(commands.Cog,name='Logger'):
         emb = discord.Embed(
             title=f'{msg.guild}',
             description=f'A message was deleted',
-            colour= discord.Colour.red()
+            colour= discord.Colour.red(),
+            timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
         )
 
         emb.add_field(name='Message Deleted',value=f'{msg.content}',inline=True)
@@ -242,7 +248,8 @@ class logger(commands.Cog,name='Logger'):
         emb = discord.Embed(
             title=f'{bmsg.author}',
             description=f'A message was edited',
-            colour=discord.Colour.blue()
+            colour=discord.Colour.blue(),
+            timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
         )
 
         emb.add_field(name='Before',value=f'{bmsg.content}',inline=True)
@@ -279,7 +286,8 @@ class logger(commands.Cog,name='Logger'):
         emb = discord.Embed(
             title=f'{banmember}',
             description=f'**Member was banned from {guild}**',
-            colour=discord.Colour.red()
+            colour=discord.Colour.red(),
+            timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
         )
 
         emb.set_thumbnail(url=banmember.avatar_url)
@@ -316,7 +324,8 @@ class logger(commands.Cog,name='Logger'):
         emb = discord.Embed(
             title=f'{banmember}',
             description=f'**Member was unbanned from {guild}**',
-            colour=discord.Colour.red()
+            colour=discord.Colour.red(),
+            timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
         )
 
         emb.set_thumbnail(url=banmember.avatar_url)

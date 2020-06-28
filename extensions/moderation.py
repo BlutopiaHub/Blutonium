@@ -30,7 +30,6 @@ class moderation(commands.Cog,name="Moderation"):
     """
     def __init__(self, client):
         self.client=client
-        
 
     @commands.command(aliases=['setprefix'], help='Changes the prefix for the server')
     @commands.has_permissions(administrator=True)
@@ -38,7 +37,7 @@ class moderation(commands.Cog,name="Moderation"):
 
         update_prefix(msg.guild,prefix)
 
-        emb = discord.Embed(title=f'{msg.guild}', description='The prefix for this server was successfully changed!', color=discord.Colour.green())
+        emb = discord.Embed(title=f'{msg.guild}', description='The prefix for this server was successfully changed!', color=discord.Colour.green(),timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
         emb.add_field(name='Changed to:', value=f'{prefix}')
         await msg.channel.send(embed=emb)
 
@@ -109,15 +108,24 @@ class moderation(commands.Cog,name="Moderation"):
 
     @commands.command(aliases=['clear'], help='deletes specified number of messages')
     @commands.has_permissions(manage_messages=True)
-    async def purge(self,msg:commands.Context, ammount=5):
+    async def purge(self,msg:commands.Context, ammount=5, *Kwargs):
+
+        if "-s" in Kwargs:
+            silent = 1
+        else:
+            silent = 0
 
         if ammount == 0:
             return await msg.channel.send('❌ You cant clear 0 messages')
         try:
-            await msg.channel.purge(limit=ammount)
-            await msg.send(f'✅ Succesfully purged `{ammount}` messages',delete_after=5)
+            await msg.channel.purge(limit=ammount+1)
         except Exception as err:
             await msg.channel.send(err)
+
+        if silent == 1:
+            return
+        else:
+            await msg.send(f'✅ Succesfully purged `{ammount}` messages',delete_after=5)
 
     @purge.error
     async def purge_handler(self,msg,error):

@@ -1,6 +1,6 @@
 import discord, datetime, time
 from discord.ext import commands
-import asyncio
+import asyncio, pytz
 from itertools import cycle
 import MySQLdb
 from Setup import *
@@ -58,7 +58,7 @@ class events(commands.Cog,name='Events'):
         current_time = time.time()
         difference = int(round(current_time - start_time)) 
         text = str(datetime.timedelta(seconds=difference))
-        embed = discord.Embed(colour=msg.message.author.colour)
+        embed = discord.Embed(colour=msg.message.author.colour, timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
         embed.add_field(name="⏳Uptime", value=text)
         embed.set_author(name=f'{self.client.user}',icon_url=self.client.user.avatar_url)
         try:
@@ -94,7 +94,7 @@ class events(commands.Cog,name='Events'):
             else:
                 print(f"""[CONSOLE] Guild '{guild.name}' has a prefix: {bruh}""")
 
-        statuses = [f'over {len(set(self.client.get_all_members()))} users!', f'over {len(self.client.guilds)} guilds!']
+        statuses = [f'over {len(set(self.client.get_all_members()))} users!', f'over {len(self.client.guilds)} guilds!','Forgot your prefix? @metion me!', 'over your mind']
 
         msgs = cycle(statuses)
 
@@ -103,7 +103,7 @@ class events(commands.Cog,name='Events'):
         while running:
             current_status = next(msgs)
             await self.client.change_presence(status=discord.Status.online, activity=discord.Activity(name=current_status ,type=3))
-            await asyncio.sleep(10)
+            await asyncio.sleep(20)
 
     
 def setup(client):

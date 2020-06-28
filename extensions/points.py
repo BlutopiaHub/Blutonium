@@ -39,6 +39,16 @@ def get_points(id):
 
     return points[0]
 
+def get_points(id):
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cur = db.cursor()
+
+    sql = f"SELECT * FROM points where points > 0"
+
+    res = cur.execute(sql)
+    points = cur.fetchone()
+
+
 def set_points(id,ammount):
     db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
     cur = db.cursor()
@@ -221,7 +231,7 @@ class points(commands.Cog,name="Points"):
         guild : discord.Guild = ctx.guild
         members = []
 
-        for member in guild.members:
+        for member in guild.members[0:500]:
 
             members.append((str(member), get_points(member.id)))
 
@@ -236,7 +246,7 @@ class points(commands.Cog,name="Points"):
             if x[1]==0:
                 pass 
             else:
-                emb.add_field(name=x[0],value=x[1],inline=False)
+                emb.add_field(name=x[0],value=f'{x[1]} points',inline=False)
 
         await ctx.send(embed=emb)
 

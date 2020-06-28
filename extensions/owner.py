@@ -1,11 +1,45 @@
-import discord
+import discord, pytz
 from discord.ext import commands
 from discord.utils import get
 import humanize as h
 import psutil, platform, ast
 import os, cpuinfo, speedtest
-import MySQLdb
+import MySQLdb, datetime
 from Setup import *
+
+
+def guildembed(guild):
+    embed = discord.Embed(
+        title = f'{guild}',
+        colour = discord.Colour.blue(),
+        timestamp=datetime.datetime.now()
+    )
+
+    botcount = 0
+    for bot in guild.members:
+        if bot.bot:
+            botcount += 1
+            
+    membercount = len(guild.members) - botcount
+    TextChs = len(guild.text_channels)
+    voiceChs = len(guild.voice_channels)
+    catcount = len(guild.categories)
+    roles = len(guild.roles)
+    servericonurl = str(guild.icon_url)
+
+    embed.add_field(name='Text channels',value=TextChs,inline=True)
+    embed.add_field(name='categories',value=catcount,inline=True)
+    embed.add_field(name='Region',value=f'{guild.region}',inline=True)
+    embed.add_field(name='Voice channels',value=voiceChs,inline=True)
+    embed.add_field(name='Server ID',value=f'{guild.id}',inline=True)
+    embed.add_field(name='Server owner', value=f'{guild.owner}',inline=True)
+    embed.add_field(name='total members',value=len(guild.members),inline=True)
+    embed.add_field(name='humans', value=membercount,inline=True)
+    embed.add_field(name='bots',value=botcount,inline=True)
+    embed.add_field(name='Created',value=f'{h.naturaltime(guild.created_at)}',inline=True)
+    embed.add_field(name='roles',value=roles)
+    embed.set_thumbnail(url=servericonurl)
+    return embed
 
 def get_blacklist():
     db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
@@ -38,6 +72,16 @@ def unblacklist_user(id):
     db.commit()
     db.close()
 
+def update_prefix(guild, prefix):
+    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
+    cur = db.cursor()
+
+    sql = f"UPDATE prefixes SET prefix = '{prefix}' WHERE id = {guild.id}" 
+
+    cur.execute(sql)
+    db.commit()
+    db.close()
+
 class owner(commands.Cog,name='Owner'):
 
     """
@@ -45,7 +89,90 @@ class owner(commands.Cog,name='Owner'):
     """
     
     def __init__(self, client):
-        self.client=client
+        self.client : commands.Bot = client
+        self.last = {}
+
+    @commands.command(aliases=['dev'], help="A set of secret commands for bot owner")
+    @commands.is_owner()
+    async def develloper(self,ctx,*kwargs):
+
+        if kwargs[0] == 'edit':
+            ori:discord.Message = ctx.message
+            msg:discord.Message= self.last[ctx.guild.id]
+
+            if kwargs[1] == '-s':
+                try:
+                    await ori.delete()
+                except:
+                    pass
+                return await msg.edit(content=' '.join(kwargs[2:]))
+            return await msg.edit(content=' '.join(kwargs[1:]))
+
+        if kwargs[0] == 'say':
+
+            ori:discord.Message = ctx.message
+            if kwargs[1] == '-s':
+                try:
+                    await ori.delete()
+                except:
+                    pass
+                self.last[ctx.guild.id] = await ctx.send(' '.join(kwargs[2:]))
+                return
+            self.last[ctx.guild.id] = await ctx.send(' '.join(kwargs[1:]))
+            return
+
+        if kwargs[0] == 'setprefix':
+            update_prefix(ctx.guild,kwargs[1])
+
+            emb = discord.Embed(title=f'{ctx.guild}', description='The prefix for this server was successfully changed!', color=discord.Colour.green(),timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
+            emb.add_field(name='Changed to:', value=f'{kwargs[1]}')
+            await ctx.channel.send(embed=emb)
+
+        if kwargs[0] == 'guilds':
+            totalguilds = self.client.guilds
+            try:
+                if kwargs[1]:
+                    try:
+                        id = int(kwargs[1])
+                        guild : discord.Guild = get(totalguilds, id=id)
+
+                        if guild is None:
+                            raise Exception
+
+                        emb = guildembed(guild)
+                
+                        return await ctx.send(embed=emb)
+                    except:
+                        
+                        id = " ".join(kwargs[1:])
+                        guild : discord.Guild = get(totalguilds, name=id)
+
+                        if guild is None:
+                            return await ctx.send("guild not found")
+
+                        emb = guildembed(guild)
+                        return await ctx.send(embed=emb)                   
+            except: 
+                
+                emb = discord.Embed(title=f"All guilds")
+
+                if len(totalguilds) < 25:
+                    for guild in totalguilds:
+                        emb.add_field(name=guild,value=f'{guild.id} - {len(guild.members)} Members')
+
+                    return await ctx.send(embed=emb)
+                else:
+                    emb2 = discord.Embed(title=f"All guilds 2")
+                    for guild in totalguilds[0:24]:
+                        emb.add_field(name=guild,value=f'{guild.id} - {len(guild.members)} Members')
+                    if len(totalguilds) < 48:
+                        for guild in totalguilds[24:]:
+                            emb2.add_field(name=guild,value=f'{guild.id} - {len(guild.members)} Members')
+                    else:
+                        for guild in totalguilds[24:48]:
+                            emb2.add_field(name=guild,value=f'{guild.id} - {len(guild.members)} Members')
+                    await ctx.send(embed=emb)
+                    await ctx.send(embed=emb2)
 
     @commands.command(aliases=['bl','cban'],help="Bans a user from using commands on this discord bot")
     @commands.is_owner()
@@ -200,7 +327,7 @@ class owner(commands.Cog,name='Owner'):
             'client': self.client,
             'discord': discord,
             'commands': commands,
-            'msg': msg,
+            'ctx': msg,
             '__import__': __import__
         }
 
@@ -212,7 +339,7 @@ class owner(commands.Cog,name='Owner'):
         emb.add_field(name=f'Output Console', value = f'```{result}```')
         emb.add_field(name = 'type', value=f'```{ress}```')
 
-        await msg.channel.send(embed=emb)
+        await msg.channel.send(embed=emb,delete_after=10)
 
     @eval.error
     async def ev_error(self,msg,error):
@@ -229,7 +356,7 @@ class owner(commands.Cog,name='Owner'):
             emb = discord.Embed(title=f'❌  ERROR' ,colour=discord.Colour.red(), description='You arent the bot owner')
             emb.add_field(name='Details', value='***EVAL*** Is a VERY Sensitive command that allows you to direcly run code on the bot Please dont run this command')
 
-            await msg.channel.send(embed=emb)
+            await msg.channel.send(embed=emb,)
 
 
 def setup(client):

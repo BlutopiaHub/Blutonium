@@ -4,12 +4,13 @@ from nltk.stem.lancaster import LancasterStemmer
 stemmer = LancasterStemmer()
 
 import tensorflow
+import discord
 import numpy,tflearn,random,json,pickle,os
 
 dst = os.path.join(str(os.getcwd()),'Data/ai')
 picklepath = os.path.join(dst,'data.pickle')
 modelpath = os.path.join(dst,'model.tflearn')
-intentpath = os.path.join(dst,'intents.json')
+intentpath = os.path.join(dst,'Nitro.json')
 
 with open(intentpath) as file:
     data = json.load(file)
@@ -127,7 +128,22 @@ def getrep(inp):
         
     return rep 
 
-import discord
+
+
+def getprediction(user):
+    utag = user.discriminator
+    res = model.predict([bag_words(utag,words)])
+
+    res_index = numpy.argmax(res)
+    tag=labels[res_index]
+
+    for tg in data["intents"]:
+        if tg["tag"] == tag:
+            rep = tg["responses"]
+    
+    return rep
+    
+
 from discord.ext import commands
 
 class Chatbot(commands.Cog,name="Ai"):
@@ -136,13 +152,11 @@ class Chatbot(commands.Cog,name="Ai"):
         self.client = client
 
     @commands.command()
-    async def ask(self,ctx,*,inp):
+    async def isNitro(self,ctx):
 
-        inpu = "".join(inp)
+        rep = getprediction(ctx.author)
 
-        rep = getrep(inpu)
-
-        await ctx.send(rep)
+        await ctx.send(rep[0])
 
 def setup(client):
     client.add_cog(Chatbot(client))
