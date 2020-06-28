@@ -32,7 +32,7 @@ def getuser(msg,inp):
 
 def request_song_info(song,artist):
     base_url= 'https://api.genius.com'
-    headers = {'Authorization': 'Bearer ' + f'{Setup.}'}
+    headers = {'Authorization': 'Bearer ' + f'{Setup.geniusapkey}'}
     search_url = base_url + '/search'
     data = {'q' : song+' '+artist}
     response = requests.get(search_url, data=data, headers=headers)
