@@ -24,6 +24,9 @@ TOKEN = ""
 ### INUPT YOUR DEFAULT PREFIX HERE
 defprefix = ""
 
+### INPUT YOUR GENIUS TOKEN HERE
+genius = ''
+
 ### mysql server info
 
 sqhost = ""
