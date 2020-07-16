@@ -60,7 +60,6 @@ class owner(commands.Cog,name='Owner'):
         scr = f"https://image.thum.io/get/width/1920/crop/1080{site}"
 
         try:
-
             emb = discord.Embed(title="Screenshot", description=site)
             emb.set_image(url=scr)
         except:
@@ -96,13 +95,6 @@ class owner(commands.Cog,name='Owner'):
                 return
             self.last[ctx.guild.id] = await ctx.send(' '.join(kwargs[1:]))
             return
-
-        if kwargs[0] == 'setprefix':
-            blutapi.update_prefix(ctx.guild,kwargs[1])
-
-            emb = discord.Embed(title=f'{ctx.guild}', description='The prefix for this server was successfully changed!', color=discord.Colour.green(),timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
-            emb.add_field(name='Changed to:', value=f'{kwargs[1]}')
-            await ctx.channel.send(embed=emb)
 
         if kwargs[0] == 'guilds':
             totalguilds = self.client.guilds
@@ -177,22 +169,6 @@ class owner(commands.Cog,name='Owner'):
 
                         except TimeoutError:
                             uses = 15                
-
-    @commands.command(aliases=['bl','cban'],help="Bans a user from using commands on this discord bot")
-    @commands.is_owner()
-    async def blacklist(self,msg,user:discord.Member):
-
-        userid = user.id
-        bl = blutapi.blacklist_user(userid)
-        await msg.channel.send(f"✅ **User {user} was successfully blacklisted**")
-        
-    @commands.command(aliases=['ubl','cuban'],help="Unbans a user from using commands on this discord bot")
-    @commands.is_owner()
-    async def unblacklist(self,msg,user:discord.Member):
-
-        userid = user.id
-        ubl = blutapi.unblacklist_user(userid)
-        await msg.channel.send(f"✅ **User {user} was successfully unblacklisted**")
 
     @commands.command(aliases=['sys'],help='Shows Information about the system that the bot is running on')
     @commands.is_owner()
