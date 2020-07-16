@@ -7,7 +7,7 @@
 
 ## optional dependecies 
 
-python3.6 -m pip install tflearn tensorflow==1.14.0
+``python3.6 -m pip install tflearn tensorflow==1.14.0``
 
 ## Windows compatibility
 This bot was built, tested, and is run on on Ubuntu 18.04/20.04
