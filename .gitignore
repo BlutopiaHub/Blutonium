@@ -3,8 +3,12 @@
 Setup.py
 Data.db
 .vscode
-Data
 datab.db
 geniusapi.py
 blutonic/client.py
 extensions/Ai.py.back
+Data/ai/*
+Data/emojis/*
+Data/envdata
+Data/images/*
+Data/minecraft/*
