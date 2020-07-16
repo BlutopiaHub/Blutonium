@@ -39,16 +39,6 @@ def get_points(id):
 
     return points[0]
 
-def get_points(id):
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cur = db.cursor()
-
-    sql = f"SELECT * FROM points where points > 0"
-
-    res = cur.execute(sql)
-    points = cur.fetchone()
-
-
 def set_points(id,ammount):
     db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
     cur = db.cursor()
@@ -155,7 +145,6 @@ class points(commands.Cog,name="Points"):
 
         await ctx.send(f"You have `{points}` points")
 
-
     @commands.command(help="help feed your gambling addiction ")
     async def gamble(self,ctx, ammount):
 
@@ -231,7 +220,7 @@ class points(commands.Cog,name="Points"):
         guild : discord.Guild = ctx.guild
         members = []
 
-        for member in guild.members[0:500]:
+        for member in guild.members[0:50]:
 
             members.append((str(member), get_points(member.id)))
 

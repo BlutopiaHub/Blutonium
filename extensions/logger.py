@@ -1,86 +1,10 @@
 import discord
 from discord.ext import commands
 from discord.utils import get
-import MySQLdb, os, datetime,pytz
+import blutapi, os, datetime,pytz
 from Setup import *
 
 
-def Checker(**permissions):
-    original = commands.has_permissions(**permissions).predicate
-    async def extended(ctx):
-        if ctx.guild is None:
-            return False
-        return commands.is_owner() or await original(ctx)
-    return commands.check(extended)
-
-def getlogdata(guild):
-
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cur = db.cursor()
-
-    guildid = str(guild.id)
-    sql = f"SELECT * FROM logs WHERE id={guildid}"
-    cur.execute(sql)
-    data = cur.fetchone()
-
-    if data is None:
-        chan = get(guild.channels, name='logs')
-        if chan is None:
-            chanid = 0000000000000000000
-        else:
-            chanid = chan.id
-        sql = f"INSERT INTO logs VALUES ({guildid}, True,{chanid})"
-        cur.execute(sql)
-        data = (guildid,True,chanid)
-
-    db.commit()
-    db.close()
-
-    return data
-
-def togglelogs(guild):
-
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cur = db.cursor()
-
-    guildid = str(guild.id)
-    sql = f"SELECT enabled FROM logs WHERE id={guildid}"
-    cur.execute(sql)
-
-    islogs = cur.fetchone()[0]
-
-    if islogs:
-        sql = f"UPDATE logs SET enabled = False WHERE id = {guildid}"
-        cur.execute(sql)
-        db.commit()
-        
-    else:
-        sql = f"UPDATE logs SET enabled = True WHERE id = {guildid}"
-        cur.execute(sql)
-        db.commit()
-
-    sql = f"SELECT enabled FROM logs WHERE id={guildid}"
-    cur.execute(sql)
-
-    islogs = cur.fetchone()[0]    
-
-    db.close()
-
-    return islogs  
-
-def setlogchannel(guild,channelid):
-
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cur = db.cursor()   
-
-    guildid = str(guild.id)
-    sql = f"UPDATE logs SET channel={channelid} WHERE id = {guildid}"
-    cur.execute(sql)
-
-    db.commit()
-    db.close()
-
-    return 0
     
 class logger(commands.Cog,name='Logger'):
     """
@@ -89,39 +13,15 @@ class logger(commands.Cog,name='Logger'):
     def __init__(self, client : commands.Bot):
         self.client = client
         self.qualified_name
-
-    @commands.command(help="Set the logs channel")
-    @commands.has_permissions(manage_channels=True)
-    async def logchannel(self,ctx,channel:discord.TextChannel):
-
-        try:
-            setlogchannel(ctx.guild, channel.id)
-            await ctx.send(f"✅ Log channel has been set to #{channel}")
-        except Exception as err:
-            await ctx.send(f"❌ Failled to set logs channel: {err}")
         
-
-
-    @commands.command(help="Turn logs On or off")
-    @commands.has_permissions(manage_channels=True)
-    async def togglelogs(self, ctx):
-
-        d = togglelogs(ctx.guild)
-        
-        if d:
-            await ctx.send("✅ Logs have been enabled")
-        else:
-            await ctx.send("❌ Logs have been disabled")
-
-    
     @commands.Cog.listener()
     async def on_voice_state_update(self,usr : discord.Member,bfv : discord.VoiceState,afv:discord.VoiceState):
 
 
         try:
-            loggerdata = getlogdata(afv.channel.guild)
+            loggerdata = blutapi.getlogdata(afv.channel.guild)
         except:
-            loggerdata = getlogdata(bfv.channel.guild)
+            loggerdata = blutapi.getlogdata(bfv.channel.guild)
 
         if loggerdata[1]:
             pass
@@ -203,11 +103,10 @@ class logger(commands.Cog,name='Logger'):
             except: 
                 return
 
-
     @commands.Cog.listener()
     async def on_message_delete(self, msg):
 
-        loggerdata = getlogdata(msg.guild)
+        loggerdata = blutapi.getlogdata(msg.guild)
 
         if loggerdata[1]:
             pass
@@ -234,7 +133,7 @@ class logger(commands.Cog,name='Logger'):
     @commands.Cog.listener()
     async def on_message_edit(self,bmsg,amsg):
 
-        loggerdata = getlogdata(bmsg.guild)
+        loggerdata = blutapi.getlogdata(bmsg.guild)
 
         if loggerdata[1]:
             pass
@@ -265,7 +164,7 @@ class logger(commands.Cog,name='Logger'):
     @commands.Cog.listener()
     async def on_member_ban(self,guild,banmember):
 
-        loggerdata = getlogdata(guild)
+        loggerdata = blutapi.getlogdata(guild)
 
         if loggerdata[1]:
             pass
@@ -298,12 +197,11 @@ class logger(commands.Cog,name='Logger'):
             await chan.send(embed=emb)
         except:
             return
-    
 
     @commands.Cog.listener()
     async def on_member_unban(self,guild, banmember):
 
-        loggerdata = getlogdata(guild)
+        loggerdata = blutapi.getlogdata(guild)
 
         if loggerdata[1]:
             pass

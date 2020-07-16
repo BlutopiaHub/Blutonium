@@ -1,55 +1,31 @@
-import discord
 from discord.ext import commands
-import json
-import os
-import MySQLdb
+from discord.utils import get
+import json, discord
+import random , os
 from Setup import *
-import random
+import asyncio
+import blutapi
 
-
-def get_prefix(client, message):
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cursor = db.cursor()
-
-    guildid = str(message.guild.id)
-    sql = f"SELECT * FROM prefixes WHERE id={guildid}"  
-    cursor.execute(sql)
-    prefix = cursor.fetchone()[1]
-    db.close()
-    return prefix
-
-def getprefix(guild):
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cur = db.cursor()
-
-    guildid = str(guild.id)
-    sql = f"SELECT * FROM prefixes WHERE id={guildid}"  
-    cur.execute(sql)
-    prefix = cur.fetchone()[1]
-    db.close()
-
-    return prefix
-
-def get_blacklist():
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cursor = db.cursor()
-
-    sql = "SELECT * FROM blacklist"
-    cursor.execute(sql)
-    query = cursor.fetchall()
-    blacklist = []
-    for x in query:
-        blacklist.append(x[0])
-    db.close()
-    return blacklist
-
-
-client = commands.Bot(command_prefix=get_prefix)
+client = commands.Bot(command_prefix=blutapi.get_prefix)
 client.remove_command('help')
 client.load_extension('jishaku')
 client.owner_id = int(ownerid)
 
 exts = []
+
+for f in os.listdir('./extensions'):
+    if f.endswith('.py'):
+        d = f.replace('.py','')
+        exts.append(d)
+
+if __name__ == '__main__':
+
+    for ext in exts:
+        try:
+            client.load_extension(f'extensions.{ext}')
+            print(ext)
+        except Exception as error:
+            print(f'[CONSOLE] {ext} CANT BE LOADED: {error}')   
 
 @client.event
 async def on_message(msg):
@@ -57,7 +33,7 @@ async def on_message(msg):
     if msg.channel is discord.DMChannel:
         print(msg.content)
 
-    prefix = getprefix(msg.channel.guild)
+    prefix = blutapi.getprefix(msg.channel.guild)
     msgc:str=msg.content
 
 
@@ -72,7 +48,7 @@ async def on_message(msg):
             f'Oi mate heres ya prefix, cheers! `{prefix}`',
             f'We\'re sorry, {client.user} is unavalible right now. Please use this prefix `{prefix}`',
             f'imagine forgeting your prefix, `{prefix}`',
-            f'TIP: use `{prefix}setprefix (whatever u want)` to change your prefix'
+            f'TIP: use `{prefix}cfg prefix (whatever u want)` to change your prefix'
             ]
 
             resonse = random.choice(responses)
@@ -80,25 +56,11 @@ async def on_message(msg):
             await msg.channel.send(resonse)
 
 
-    bl = get_blacklist()
-    if msg.author.id in bl:
-        if msgc.startswith(f"{prefix}"):
-            return await msg.channel.send("You have been blacklisted from using this discord bot!")
+    bl = blutapi.get_blacklist()
+    if msg.author.id not in bl:
+        return await client.process_commands(msg)
     else:
-        await client.process_commands(msg)
-
-for f in os.listdir('./extensions'):
-    if f.endswith('.py'):
-        d = f.replace('.py','')
-        exts.append(d)
-
-if __name__ == '__main__':
-
-    for ext in exts:
-        try:
-            client.load_extension(f'extensions.{ext}')
-            print(ext)
-        except Exception as error:
-            print(f'[CONSOLE] {ext} CANT BE LOADED: {error}')            
+        if msgc.startswith(prefix):
+           return await msg.channel.send("You have been blacklisted from using this bot")
 
 client.run(TOKEN)

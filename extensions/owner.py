@@ -4,9 +4,8 @@ from discord.utils import get
 import humanize as h
 import psutil, platform, ast
 import os, cpuinfo, speedtest
-import MySQLdb, datetime
+import blutapi, datetime
 from Setup import *
-
 
 def guildembed(guild):
     embed = discord.Embed(
@@ -41,47 +40,6 @@ def guildembed(guild):
     embed.set_thumbnail(url=servericonurl)
     return embed
 
-def get_blacklist():
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cursor = db.cursor()
-
-    sql = "SELECT * FROM blacklist"
-    cursor.execute(sql)
-    query = cursor.fetchall()
-    blacklist = []
-    for x in query:
-        blacklist.append(x[0])
-    db.close()
-    return blacklist
-
-def blacklist_user(id):
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cursor = db.cursor()
-
-    sql = f"INSERT INTO blacklist VALUES ({id})"
-    cursor.execute(sql)
-    db.commit()
-    db.close()
-
-def unblacklist_user(id):
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cursor = db.cursor()
-
-    sql = f"DELETE FROM blacklist WHERE id={id}"
-    cursor.execute(sql)
-    db.commit()
-    db.close()
-
-def update_prefix(guild, prefix):
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cur = db.cursor()
-
-    sql = f"UPDATE prefixes SET prefix = '{prefix}' WHERE id = {guild.id}" 
-
-    cur.execute(sql)
-    db.commit()
-    db.close()
-
 class owner(commands.Cog,name='Owner'):
 
     """
@@ -91,6 +49,24 @@ class owner(commands.Cog,name='Owner'):
     def __init__(self, client):
         self.client : commands.Bot = client
         self.last = {}
+
+    @commands.command(aliases=['ss'])
+    @commands.is_owner()
+    async def screenshot(self,ctx,*Kwargs):
+
+        if not Kwargs[0].startswith('http://'):
+            site = "http://" + Kwargs[0]
+
+        scr = f"https://image.thum.io/get/width/1920/crop/1080{site}"
+
+        try:
+
+            emb = discord.Embed(title="Screenshot", description=site)
+            emb.set_image(url=scr)
+        except:
+            emb = discord.Embed(title="FAILED!")
+
+        await ctx.send(embed=emb)
 
     @commands.command(aliases=['dev'], help="A set of secret commands for bot owner")
     @commands.is_owner()
@@ -122,7 +98,7 @@ class owner(commands.Cog,name='Owner'):
             return
 
         if kwargs[0] == 'setprefix':
-            update_prefix(ctx.guild,kwargs[1])
+            blutapi.update_prefix(ctx.guild,kwargs[1])
 
             emb = discord.Embed(title=f'{ctx.guild}', description='The prefix for this server was successfully changed!', color=discord.Colour.green(),timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
             emb.add_field(name='Changed to:', value=f'{kwargs[1]}')
@@ -151,7 +127,8 @@ class owner(commands.Cog,name='Owner'):
                             return await ctx.send("guild not found")
 
                         emb = guildembed(guild)
-                        return await ctx.send(embed=emb)                   
+                        msg = await ctx.send(embed=emb)
+
             except: 
                 
                 emb = discord.Embed(title=f"All guilds")
@@ -171,28 +148,51 @@ class owner(commands.Cog,name='Owner'):
                     else:
                         for guild in totalguilds[24:48]:
                             emb2.add_field(name=guild,value=f'{guild.id} - {len(guild.members)} Members')
-                    await ctx.send(embed=emb)
-                    await ctx.send(embed=emb2)
+                    msg = await ctx.send(embed=emb)
+                    await msg.add_reaction('◀')
+                    await msg.add_reaction('⏹')
+                    await msg.add_reaction('▶')
+                    pages = [emb,emb2]
+
+                    page=0
+
+                    uses = 0
+
+                    def check(reaction, user):
+                        return reaction.message.id == msg.id and user == ctx.author
+                    while uses < 15:
+                        try:
+                            reaction, _ = await self.client.wait_for('reaction_add', timeout=100.0, check=check)
+                            await msg.remove_reaction(reaction.emoji, ctx.author)
+                            if reaction.emoji == '▶' and page == 0:
+                                page +=1
+                                uses +=1
+                                await msg.edit(embed=pages[page])
+                            if reaction.emoji == '◀' and page == 1:
+                                page -=1
+                                uses +=1
+                                await msg.edit(embed=pages[page])
+                            if reaction.emoji == '⏹':
+                                await msg.delete()
+
+                        except TimeoutError:
+                            uses = 15                
 
     @commands.command(aliases=['bl','cban'],help="Bans a user from using commands on this discord bot")
     @commands.is_owner()
     async def blacklist(self,msg,user:discord.Member):
 
         userid = user.id
-        bl = blacklist_user(userid)
+        bl = blutapi.blacklist_user(userid)
         await msg.channel.send(f"✅ **User {user} was successfully blacklisted**")
         
-
     @commands.command(aliases=['ubl','cuban'],help="Unbans a user from using commands on this discord bot")
     @commands.is_owner()
     async def unblacklist(self,msg,user:discord.Member):
 
         userid = user.id
-        ubl = unblacklist_user(userid)
+        ubl = blutapi.unblacklist_user(userid)
         await msg.channel.send(f"✅ **User {user} was successfully unblacklisted**")
-
-
-
 
     @commands.command(aliases=['sys'],help='Shows Information about the system that the bot is running on')
     @commands.is_owner()
@@ -288,7 +288,6 @@ class owner(commands.Cog,name='Owner'):
 
         await user.send(content)
 
-
     @commands.command(aliases=['ev'], help='Executes Python code as The bot')
     @commands.is_owner()
     async def eval(self,msg, *, cmd):
@@ -357,7 +356,6 @@ class owner(commands.Cog,name='Owner'):
             emb.add_field(name='Details', value='***EVAL*** Is a VERY Sensitive command that allows you to direcly run code on the bot Please dont run this command')
 
             await msg.channel.send(embed=emb,)
-
 
 def setup(client):
     client.add_cog(owner(client))

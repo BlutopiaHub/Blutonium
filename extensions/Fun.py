@@ -27,8 +27,6 @@ def getuser(msg,inp):
             for men in msg.message.mentions:
                 member = men
     return member
-        
-
 
 def request_song_info(song,artist):
     base_url= 'https://api.genius.com'
@@ -38,8 +36,6 @@ def request_song_info(song,artist):
     response = requests.get(search_url, data=data, headers=headers)
 
     return response
-
-
 
 class fun(commands.Cog,name="Fun"):
     """
@@ -214,7 +210,7 @@ class fun(commands.Cog,name="Fun"):
     async def spotify(self,msg,*,inp=None):
 
         def chop_microseconds(delta):
-            return delta - datetime.timedelta(microseconds=delta.microseconds)
+            return delta - datetime.timedelta(microseconds=delta.microseconds)    
 
         member = getuser(msg,inp)
 
@@ -223,7 +219,7 @@ class fun(commands.Cog,name="Fun"):
             if isinstance(activity, Spotify):
                 dur = chop_microseconds(activity.duration)
                 artist = activity.artist.split(';')[0]
-                query = request_song_info(artist,activity.title)
+                query = request_song_info(artist,activity.title.split("(")[0])
                 try:
                     genius = f'[Lyrics](https://genius.com{query.json()["response"]["hits"][0]["result"]["path"]})'
                 except:
@@ -282,7 +278,6 @@ class fun(commands.Cog,name="Fun"):
             await msg.channel.send(f'✅ Succesfully Babbed `{member.name}`!')
         else:
             await msg.channel.send(f'✅ Succesfully Booped `{member.name}`!')
-
 
     @commands.command(aliases=['m'],help='Sends a random meme from reddit')
     async def meme(self, msg:commands.Context):

@@ -7,3 +7,5 @@ Data
 datab.db
 geniusapi.py
 BlutAPI.py
+blutonic/client.py
+extensions/Ai.py.back

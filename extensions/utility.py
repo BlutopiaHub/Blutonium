@@ -3,22 +3,24 @@ from discord.ext import commands, menus
 import psutil, operator, os
 import humanize as h
 import requests, shutil
-import random, platform, MySQLdb
+import random, platform, blutapi
 from discord.utils import get
 import inspect,pytz
 from Setup import * 
 
-def get_prefix(guild):
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cur = db.cursor()
+LEFTREACTION='⬅️'
+XREACTION='🇽'
+RIGHTREACTION='➡️'
 
-    guildid = str(guild.id)
-    sql = f"SELECT * FROM prefixes WHERE id={guildid}"  
-    cur.execute(sql)
-    prefix = cur.fetchone()[1]
-    db.close()
 
-    return prefix
+class embedColor:
+    orange = 0xec5c17
+    yellow = 0xFFFF00
+    blurple = 0x7289DA
+    blue = 0x499FFF 
+    grey = 0xCCCCCC 
+    white = 0xffffff
+    cyan = 0x53dff7
 
 class utility(commands.Cog,name='Utility'):
     """
@@ -32,48 +34,59 @@ class utility(commands.Cog,name='Utility'):
     @commands.command(help='Help command to get started on using the bot!')
     async def help(self,ctx,*cog):
         """Gets all cogs and commands of mine."""
-        prefix = get_prefix(ctx.guild)
+        prefix = blutapi.getprefix(ctx.guild)
+        cogembeds=[]
 
         try:
             if not cog:
                 """Cog listing.  What more?"""
-                halp=discord.Embed(title='Help!',
-                                description=f'Use `{prefix}help *category*` to see all the commands!', timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
-                cogs_desc = ''
+
                 for x in self.client.cogs:
-                    cogs_desc += f'**{x}** - {self.client.cogs[x].__doc__}\n'
-                halp.add_field(name='Categories',value=cogs_desc[0:len(cogs_desc)-1],inline=True)
-                cmds_desc = ''
-                for y in self.client.walk_commands():
-                    if not y.cog_name and not y.hidden:
-                        cmds_desc += ('{} - {}'.format(y.name,y.help)+'\n')
-                halp.add_field(name='tip',value=f'***Use {prefix}changeprefix to change the bot prefix***',inline=False)
-                await ctx.message.add_reaction(emoji='❔')
-                await ctx.send('',embed=halp)
-            else:
-                """Helps me remind you if you pass too many args."""
-                if len(cog) > 1:
-                    halp = discord.Embed(title='Error!',description='That is way too many cogs!',color=discord.Color.red(), timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
-                    await ctx.send('',embed=halp)
-                else:
-                    """Command listing within a cog."""
-                    found = False
-                    for x in self.client.cogs:
-                        for y in cog:
-                            if x == y:
-                                halp=discord.Embed(title=cog[0]+' Command Listing',description=self.client.cogs[cog[0]].__doc__, timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
-                                for c in self.client.get_cog(y).get_commands():
-                                    if not c.hidden:
-                                        halp.add_field(name=f"{c.name}-{c.aliases}",value=c.help,inline=False)
-                                found = True
-                    if not found:
-                        """Reminds you if that cog doesn't exist."""
-                        halp = discord.Embed(title='Error!',description='How do you even use "'+cog[0]+'"?',color=discord.Color.red(), timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
+
+                    if x == "Jishaku":
+                        pass
                     else:
-                        await ctx.message.add_reaction(emoji='❔')
-                    await ctx.send('',embed=halp)
+                        halp=discord.Embed(title=f'{x}', description=f'{self.client.cogs[x].__doc__}', timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
+
+                        for command in self.client.get_cog(x).get_commands():
+
+                            if not command.hidden:
+                                if command.aliases:
+                                    halp.add_field(name=f"{command.name} - ({', '.join(command.aliases)})", value=command.help)
+                                else:
+                                    halp.add_field(name=f"{command.name}", value=command.help)
+                        
+                        cogembeds.append(halp)
+
+            msg = await ctx.send(embed=cogembeds[0])
+            await msg.add_reaction('◀')
+            await msg.add_reaction('⏹')
+            await msg.add_reaction('▶')
+            page= 0
+
+            uses = 0
+
+            def check(reaction, user):
+                return reaction.message.id == msg.id and user == ctx.author
+            while uses < 20:
+                try:
+                    reaction, _ = await self.client.wait_for('reaction_add', timeout=100.0, check=check)
+                    await msg.remove_reaction(reaction.emoji, ctx.author)
+                    if reaction.emoji == '▶' and page < len(cogembeds)-1:
+                        page +=1
+                        uses +=1
+                        await msg.edit(embed=cogembeds[page])
+                    if reaction.emoji == '◀' and page != 0:
+                        page -=1
+                        uses +=1
+                        await msg.edit(embed=cogembeds[page])
+                    if reaction.emoji == '⏹':
+                        await msg.delete()
+
+                except TimeoutError:
+                    uses = 20                       
         except Exception as err:
-            await ctx.send(f"Excuse me, I can't send embeds. {err}")
+            await ctx.send(err)
             
     @commands.Cog.listener()
     async def on_message_delete(self,msg):
@@ -102,11 +115,10 @@ class utility(commands.Cog,name='Utility'):
 
         await msg.channel.send(embed=emb)
     
-
     @commands.command(aliases=['stats','binfo','about'], help='Gathers and displays Bot info')
     async def botinfo(self,msg):
         pythonVersion = platform.python_version()
-        clientVersion = '1.13.2'
+        clientVersion = '1.14.0'
         dpyVersion = discord.__version__
         serverCount = len(self.client.guilds)
         memberCount = len(set(self.client.get_all_members()))
@@ -117,18 +129,17 @@ class utility(commands.Cog,name='Utility'):
         embed.add_field(name='Total Guilds:', value=serverCount)
         embed.add_field(name='Total Users:', value=memberCount)
         embed.add_field(name='Bot Creator:', value="<@393165866285662208>")
-        embed.add_field(name='Status:', value=discord.Status.online)
         embed.set_footer(text=f'{self.client.user.name} || command credit: Tayso20')
         embed.set_thumbnail(url=self.client.user.avatar_url)
+        embed.set_image(url='https://top.gg/api/widget/627521478761381920.svg')
         await msg.send(embed=embed)
-
 
     @commands.command(help='Sends A rich embed with invite links for the bot and support server')
     async def invite(self, msg):
 
         emb = discord.Embed(timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
         emb.add_field(name='**Invite Link**', value=f'[Click me!](https://discordapp.com/oauth2/authorize?client_id={self.clientid}&scope=bot&permissions=8)', inline=False)
-        emb.add_field(name='**Im made with the drizzi bot template! join the support server here!**', value='[Click me!](https://discord.gg/NNfD6eQ)', inline=False)
+        emb.add_field(name='**join the support server here!**', value='[Click me!](https://discord.gg/NNfD6eQ)', inline=False)
         emb.set_author(name=self.client.user, icon_url=self.client.user.avatar_url)
         await msg.channel.send(embed=emb)
 
@@ -232,15 +243,12 @@ class utility(commands.Cog,name='Utility'):
 
         for perm in member.guild_permissions:
 
-            blacklist = ['speak','connect','stream','use voice','external emojis', 'change nickname','use voice activation','add reactions','send tts messages', 'send messages', 'read messages', 'create instant invite']
-            bold = ['ban members', 'manage guild','mention everyone']
-
+            Key = ['ban members', 'manage guild','mention everyone', 'administrator', "send messages"]
             if perm[1]:
                 name = perm[0]
                 name = name.replace('_', ' ')
-                if name in bold:
-                    name = f'**{name}**'
-                if name not in blacklist:
+    
+                if name in Key:
                     perms.append(f'{name}\n')
             else:
                 pass
@@ -250,7 +258,7 @@ class utility(commands.Cog,name='Utility'):
         roles = []
 
         for role in member.roles:
-            roles.append(role.name)
+            roles.append(role.mention)
 
         def joinpos(user, guild):
             try:
@@ -269,9 +277,13 @@ class utility(commands.Cog,name='Utility'):
 
         def checkfornitro(user):
             if user.is_avatar_animated():
-                return True
-            else:
-                return False
+                nitro = True
+            
+            for role in user.roles:
+                if role.name == "Nitro Booster":
+                    nitro = True
+
+            return nitro
     
         isnitro = checkfornitro(member)
         embed = discord.Embed(title=f'{member.name}',colour=member.colour, timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
@@ -279,8 +291,8 @@ class utility(commands.Cog,name='Utility'):
         embed.add_field(name='Joined Guild', value=f'{h.naturaltime(member.joined_at)}',inline=True)
         embed.add_field(name='Joined Discord', value=f'{h.naturaltime(member.created_at)}',inline=True)
         embed.add_field(name='Guild join position', value=f'{joined[0]}/{joined[1]}')
-        embed.add_field(name=f'Roles({len(roles)})', value=', '.join(roles), inline=False)
-        embed.add_field(name='PERMISSONS', value=''.join(permsd),inline=False)
+        embed.add_field(name=f'Roles({len(roles)})', value=' '.join(roles), inline=False)
+        embed.add_field(name='Key Permissions', value=''.join(permsd),inline=False)
         if member.name == member.display_name:
             embed.add_field(name='Nickname', value=f'None')
         else:
@@ -293,7 +305,6 @@ class utility(commands.Cog,name='Utility'):
         embed.set_footer(text=member.id, icon_url=member.avatar_url)
 
         await msg.channel.send(embed=embed)
-
 
     @commands.command(aliases=["date","datetime","time"], help="Show the current date and time")
     async def day(self,ctx):
@@ -313,9 +324,6 @@ class utility(commands.Cog,name='Utility'):
         emb.add_field(name='id', value=f'{member.id}')
 
         await ctx.send(embed=emb)
-        
-
-
 
 def setup(client):
     client.add_cog(utility(client))
