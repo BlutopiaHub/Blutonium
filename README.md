@@ -3,7 +3,7 @@
 ## required dependencies
 ### Use python 3.6.11 for Max compatibility 
 
-``python3.6 -m pip install py-cpuinfo pg8000 speedtest-cli psutil discord.py\[voice] jishaku pytz requests``
+``python3.6 -m pip install py-cpuinfo pg8000 speedtest-cli psutil discord.py[voice] jishaku pytz requests``
 
 ## optional dependecies 
 
