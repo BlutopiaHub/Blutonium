@@ -30,3 +30,5 @@ genius = ''
 ### postgresql server info
 dbuname = ''
 dbpword = ''
+
+### WHEN YOU ARE DONE RENAME THIS FILE TO "Setup.py"

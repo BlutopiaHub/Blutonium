@@ -19,7 +19,7 @@ class moderation(commands.Cog,name="Moderation"):
     def __init__(self, client):
         self.client : commands.Bot = client
 
-    @commands.command(aliases=["cfg, settings"], help="Customize bot settings")
+    @commands.command(aliases=["cfg","settings"], help="Customize bot settings")
     async def config(self,ctx,*kwargs):
         
         support = get(self.client.guilds, id=629436501964619776)

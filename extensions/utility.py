@@ -118,7 +118,7 @@ class utility(commands.Cog,name='Utility'):
     @commands.command(aliases=['stats','binfo','about'], help='Gathers and displays Bot info')
     async def botinfo(self,msg):
         pythonVersion = platform.python_version()
-        clientVersion = '1.14.0'
+        clientVersion = '1.15.1'
         dpyVersion = discord.__version__
         serverCount = len(self.client.guilds)
         memberCount = len(set(self.client.get_all_members()))
