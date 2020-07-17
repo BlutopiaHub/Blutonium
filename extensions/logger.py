@@ -1,56 +1,47 @@
 import discord
 from discord.ext import commands
 from discord.utils import get
-import os 
+import blutapi, os, datetime,pytz
+from Setup import *
 
-class logger(commands.Cog):
+
+    
+class logger(commands.Cog,name='Logger'):
     """
-    Listeners for logging (Make a channel called logs!)
+    Listeners for logging 
     """
     def __init__(self, client : commands.Bot):
         self.client = client
-        self.blacklist = [264445053596991498,336642139381301249]
-
-    #@commands.Cog.listener()
-    #async def on_user_update(self,bus:discord.Member, aus:discord.Member):
-
-        #if bus.avatar_url == aus.avatar_url:
-       #     pass 
-       # else:
-      #      try:
-      #          dst = os.path.join(str(os.getcwd()),f'Data/images/{bus.id}.png')
-     #           dstg = os.path.join(str(os.getcwd()),f'Data/images/{bus.id}.gif')
-     #       except:
-        #        return
-
-        #    try:
-         #       if bus.is_avatar_animated():
-          #          os.remove(dstg)
-         #       else:
-      #              os.remove(dst)
-      #      except:
-     #           return
-
+        self.qualified_name
+        
     @commands.Cog.listener()
     async def on_voice_state_update(self,usr : discord.Member,bfv : discord.VoiceState,afv:discord.VoiceState):
 
-        if bfv.channel is None:
+
+        try:
+            loggerdata = blutapi.getlogdata(afv.channel.guild)
+        except:
+            loggerdata = blutapi.getlogdata(bfv.channel.guild)
+
+        if loggerdata[1]:
             pass
-        elif bfv.channel.guild.id in self.blacklist:
+        else:
             return
+
 
         if afv.channel == bfv.channel:
             pass
         else:
             emb = discord.Embed(
                 title = f'{usr}',
-                description = 'User changed voice channels'
+                description = 'User changed voice channels',
+                timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
             )
 
             emb.add_field(name = "Update", value = f"**{bfv.channel}** -> **{afv.channel}**")
             emb.set_thumbnail(url=usr.avatar_url)
             try:   
-                channel = get(bfv.channel.guild.channels, name='logs')
+                channel = get(bfv.channel.guild.channels, id=loggerdata[2])
                 await channel.send(embed = emb)
                 return
             except:
@@ -63,7 +54,8 @@ class logger(commands.Cog):
 
                 emb = discord.Embed(
                 title = f'{usr}',
-                description = 'User server muted'
+                description = 'User server muted',
+                timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
                 )
                 emb.set_thumbnail(url=usr.avatar_url)
                 
@@ -71,12 +63,13 @@ class logger(commands.Cog):
                 
                 emb = discord.Embed(
                 title = f'{usr}',
-                description = 'User was Unserver-muted'
+                description = 'User was Unserver-muted',
+                timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
                 )
                 emb.set_thumbnail(url=usr.avatar_url)
 
             try:
-                channel = get(bfv.channel.guild.channels, name='logs')
+                channel = get(bfv.channel.guild.channels, id=loggerdata[2])
                 await channel.send(embed = emb)   
                 return
             except: 
@@ -90,7 +83,8 @@ class logger(commands.Cog):
 
                 emb = discord.Embed(
                 title = f'{usr}',
-                description = 'User was server Deafened'
+                description = 'User was server Deafened',
+                timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
                 )
                 emb.set_thumbnail(url=usr.avatar_url)
                 
@@ -98,27 +92,32 @@ class logger(commands.Cog):
                 
                 emb = discord.Embed(
                 title = f'{usr}',
-                description = 'User was Unserver-deafened'
+                description = 'User was Unserver-deafened',
+                timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
                 )
                 emb.set_thumbnail(url=usr.avatar_url)
             try:
-                channel = get(bfv.channel.guild.channels, name='logs')
+                channel = get(bfv.channel.guild.channels, id=loggerdata[2])
                 await channel.send(embed = emb)   
                 return
             except: 
                 return
 
-
     @commands.Cog.listener()
     async def on_message_delete(self, msg):
 
-        if msg.guild.id in self.blacklist:
+        loggerdata = blutapi.getlogdata(msg.guild)
+
+        if loggerdata[1]:
+            pass
+        else:
             return
 
         emb = discord.Embed(
             title=f'{msg.guild}',
             description=f'A message was deleted',
-            colour= discord.Colour.red()
+            colour= discord.Colour.red(),
+            timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
         )
 
         emb.add_field(name='Message Deleted',value=f'{msg.content}',inline=True)
@@ -126,17 +125,21 @@ class logger(commands.Cog):
         emb.set_thumbnail(url=msg.author.avatar_url)
 
         try:
-            chan : discord.TextChannel = get(msg.guild.channels, name="logs")
+            chan : discord.TextChannel = get(msg.guild.channels, id=loggerdata[2])
             await chan.send(embed=emb)
         except:
             return
       
-
     @commands.Cog.listener()
     async def on_message_edit(self,bmsg,amsg):
 
-        if bmsg.guild.id in self.blacklist:
+        loggerdata = blutapi.getlogdata(bmsg.guild)
+
+        if loggerdata[1]:
+            pass
+        else:
             return
+
 
         if amsg.author == self.client.user:
             return
@@ -144,7 +147,8 @@ class logger(commands.Cog):
         emb = discord.Embed(
             title=f'{bmsg.author}',
             description=f'A message was edited',
-            colour=discord.Colour.blue()
+            colour=discord.Colour.blue(),
+            timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
         )
 
         emb.add_field(name='Before',value=f'{bmsg.content}',inline=True)
@@ -152,7 +156,7 @@ class logger(commands.Cog):
         emb.set_thumbnail(url=bmsg.author.avatar_url)
     
         try:
-            chan : discord.TextChannel = get(bmsg.guild.channels, name="logs")
+            chan : discord.TextChannel = get(bmsg.guild.channels, id=loggerdata[2])
             await chan.send(embed=emb)
         except:
             return
@@ -160,7 +164,11 @@ class logger(commands.Cog):
     @commands.Cog.listener()
     async def on_member_ban(self,guild,banmember):
 
-        if guild.id in self.blacklist:
+        loggerdata = blutapi.getlogdata(guild)
+
+        if loggerdata[1]:
+            pass
+        else:
             return
 
         bans = await guild.bans()
@@ -177,25 +185,29 @@ class logger(commands.Cog):
         emb = discord.Embed(
             title=f'{banmember}',
             description=f'**Member was banned from {guild}**',
-            colour=discord.Colour.red()
+            colour=discord.Colour.red(),
+            timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
         )
 
         emb.set_thumbnail(url=banmember.avatar_url)
         emb.add_field(name='Reason', value=f'{reason}')
 
         try:
-            chan : discord.TextChannel = get(guild.channels, name="logs")
+            chan : discord.TextChannel = get(guild.channels, id=loggerdata[2])
             await chan.send(embed=emb)
         except:
             return
-    
 
     @commands.Cog.listener()
     async def on_member_unban(self,guild, banmember):
-            
-        if guild.id in self.blacklist:
-            return
 
+        loggerdata = blutapi.getlogdata(guild)
+
+        if loggerdata[1]:
+            pass
+        else:
+            return
+            
         bans = await guild.bans()
 
         Member_name, Member_disc = str(banmember).split('#')
@@ -210,14 +222,15 @@ class logger(commands.Cog):
         emb = discord.Embed(
             title=f'{banmember}',
             description=f'**Member was unbanned from {guild}**',
-            colour=discord.Colour.red()
+            colour=discord.Colour.red(),
+            timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern'))
         )
 
         emb.set_thumbnail(url=banmember.avatar_url)
         emb.add_field(name='Reason for initial ban', value=f'{reason}')
 
         try:
-            chan : discord.TextChannel = get(guild.channels, name="logs")
+            chan : discord.TextChannel = get(guild.channels, id=loggerdata[2])
             await chan.send(embed=emb)
         except:
             return

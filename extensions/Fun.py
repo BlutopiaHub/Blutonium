@@ -2,54 +2,74 @@ import discord
 from discord import Spotify
 from discord.ext import commands
 from discord.utils import get
-import math
-from time import *
-import datetime
-import os
+import math, time, datetime, pytz
+import os, requests, Setup, shutil
 from random import randrange
-import requests
-from Setup import *
-import shutil
-##import twitch
 import humanize as h
 
-class fun(commands.Cog):
+def getuser(msg,inp):
+
+    try:
+        member = get(msg.guild.members, id=int(inp))
+            
+    except:
+
+        if inp:
+            try:
+                member = get(msg.guild.members, name=inp)
+                    
+            except:
+                member = get(msg.guild.members, display_name=inp)
+
+        if  inp is None:
+            member : discord.Member = msg.author
+        else:
+            for men in msg.message.mentions:
+                member = men
+    return member
+
+def request_song_info(song,artist):
+    base_url= 'https://api.genius.com'
+    headers = {'Authorization': 'Bearer ' + f'{Setup.geniusapkey}'}
+    search_url = base_url + '/search'
+    data = {'q' : song+' '+artist}
+    response = requests.get(search_url, data=data, headers=headers)
+
+    return response
+
+class fun(commands.Cog,name="Fun"):
     """
     Fun Commands for messing with friends and having a good time
     """
     def __init__(self, client):
         self.client=client
-        #self.helix = twitch.Helix(twitchkey, use_cache=True)
-        self.hypix = HPapikey
-
+        self.hypix = Setup.HPapikey
     
     @commands.command(help='The ultimate judge')
-    async def pp(self,msg,user:discord.Member=None):
+    async def pp(self,ctx,*,usr=None): 
 
-        if user is None:
-            user = msg.author
+        user = getuser(ctx,usr)
+        
 
         length = randrange(1, 25)
 
-        pp = "8"+("="*length)+"3"
+        pp = "8"+("="*length)+"D"
 
         if length > 22:
             lens = "Too long to measure"
-            pp = "8====================================================================================3"
+            pp = "8====================================================================================D"
         else:
             lens = f'{length} inches'
-        
-        
 
-        if user.id == ownerid:
+        if user.id == Setup.ownerid:
             lens="too long to measure"
-            pp = "8=========================================================================================3"
+            pp = "8=========================================================================================D"
 
         emb= discord.Embed(title=f"{user}'s pp length'")
 
         emb.add_field(name=lens, value=f"**{pp}**")
 
-        await msg.channel.send(embed=emb)
+        await ctx.channel.send(embed=emb)
 
     @commands.command(help='Get a users hypixel data')
     async def hypixel(self,msg,query):
@@ -58,7 +78,7 @@ class fun(commands.Cog):
         data = requests.request("GET", f"https://api.hypixel.net/player?key={self.hypix}&name={query}").json()
 
         if data["player"] is None:
-            emb= discord.Embed(title='Player not found!!',description='Player does not have a hypixel profile or Drizzi failed to get the players information')
+            emb= discord.Embed(title='Player not found!!',description=f'Player does not have a hypixel profile or {str(self.client.user).split("#")[0]} failed to get the players information',timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
             emb.set_thumbnail(url=link)
             return await msg.send(embed=emb)
          
@@ -73,48 +93,12 @@ class fun(commands.Cog):
         
         await msg.send(embed=emb)
 
-
-    #@commands.command(aliases=['ttv'], help='Fetch and display a twitch users profile')
-    #async def twitch(self,msg, user):
-
-      #  ttv = self.helix.user(user)
-   #     displayname = ttv.display_name
-   # 
-  #      emb = discord.Embed(
-  #          title=displayname
-  #      )
-        
-#
-   #     def CheckforLive(ttv):
-
-      #      if ttv.is_live:
-      #          return '🔴 Live'
-#
-      #      else:
-       #         return '🔵 Offline'
-#
-
-      #  emb.set_thumbnail(url=ttv.profile_image_url)
-     #   emb.add_field(name='Followers', value=ttv.followers().total)
-     #   emb.add_field(name='Following', value=ttv.following().total)
-     #   emb.add_field(name='Status', value=CheckforLive(ttv))
-       # print(ttv.email)
-      #  if ttv.is_live:
-        #    emb.add_field(name='Stream', value=f'[{ttv.stream.title}](https://twitch.tv/{ttv.display_name})')
-      #      emb.add_field(name='Viewers', value=ttv.stream.viewer_count)
-            
-       # await msg.channel.send(embed=emb)
-
     @commands.command(aliases=['av'], help='Shows user avatar')
-    async def avatar(self,msg,*args):
+    async def avatar(self,msg,*,inp=None):
 
-        for user in msg.message.mentions:
-            member = user
+        member = getuser(msg,inp)
 
-        if not msg.message.mentions:
-            member = msg.author
-
-        avatarurl = member.avatar_url
+        avatarurl = str(member.avatar_url).split('size=1024')[0] + 'size=1024'
         memberimg = f'{member.id}.png'
         membernitro = f'{member.id}.gif'
         pth = os.getcwd()
@@ -125,6 +109,11 @@ class fun(commands.Cog):
         srcg = os.path.join(str(pth),membernitro)
         images = os.listdir(dst)
 
+        async def sendav(src,src2,usr):
+            shutil.move(src2,pth)
+            await msg.channel.send(file=discord.File(usr))
+            shutil.move(src,dst)
+
         def checkfornitro(user):
             if user.is_avatar_animated():
                 return True
@@ -132,35 +121,29 @@ class fun(commands.Cog):
                 return False
 
         isnitro = checkfornitro(member)
+
         pull = requests.get(avatarurl, allow_redirects=True)
 
         if isnitro:
             if membernitro in images:
-                shutil.move(src2g,pth)
-                await msg.channel.send(file=discord.File(membernitro))
-                shutil.move(srcg,dst)
+                await sendav(srcg,src2g,membernitro)
                 return
             else:
                 open(f'{member.id}.gif', 'wb').write(pull.content)
                 shutil.move(srcg,dst)
 
-            shutil.move(src2g,pth)
-            await msg.channel.send(file=discord.File(membernitro))
-            shutil.move(srcg,dst)
+            await sendav(srcg,src2g,membernitro)
             return
         else:
             if memberimg in images:
-                shutil.move(src2,pth)
-                await msg.channel.send(file=discord.File(memberimg))
-                shutil.move(src,dst)
+                await sendav(src,src2,memberimg)
                 return
             else:
                 open(f'{member.id}.png', 'wb').write(pull.content)
                 shutil.move(src,dst)
 
-            shutil.move(src2,pth)
-            await msg.channel.send(file=discord.File(memberimg))
-            shutil.move(src,dst)
+            await sendav(src,src2,memberimg)
+            return
 
     @commands.command(help='Takes minecraft username and shows its head')
     async def mc(self,msg,*args):
@@ -224,21 +207,23 @@ class fun(commands.Cog):
         shutil.move(src,dst)
 
     @commands.command(help='shows user spotify status')
-    async def spotify(self,msg):
+    async def spotify(self,msg,*,inp=None):
 
         def chop_microseconds(delta):
-            return delta - datetime.timedelta(microseconds=delta.microseconds)
+            return delta - datetime.timedelta(microseconds=delta.microseconds)    
 
-        for user in msg.message.mentions:
-            member = user
-
-        if not msg.message.mentions:
-            member = msg.author
+        member = getuser(msg,inp)
 
         for activity in member.activities:
 
             if isinstance(activity, Spotify):
                 dur = chop_microseconds(activity.duration)
+                artist = activity.artist.split(';')[0]
+                query = request_song_info(artist,activity.title.split("(")[0])
+                try:
+                    genius = f'[Lyrics](https://genius.com{query.json()["response"]["hits"][0]["result"]["path"]})'
+                except:
+                    genius = "Failed to find Lyrics!"
 
                 emb = discord.Embed(
                     title = f'{activity.title}',
@@ -249,19 +234,19 @@ class fun(commands.Cog):
 
                 emb.set_thumbnail(url=activity.album_cover_url)
                 emb.add_field(name='Duration', value=f'{dur}' )
+                emb.add_field(name="Genius", value=genius)
                 emb.set_footer(text=f'Started listening')
 
                 await msg.channel.send(embed=emb)
                 return
 
     @commands.command(aliases=['gey','gei'], help='Call a user gay (joke)')
-    async def gay(self,msg):
-        owner = ownerid
+    async def gay(self,msg,*,inp=None):
+        owner = Setup.ownerid
         bot = self.client.user.id
         chance = randrange(0,2)
 
-        for user in msg.message.mentions:
-            member = user
+        member = getuser(msg,inp)
 
         if msg.author == member:
             await msg.channel.send('lmao u just called urslef gey')
@@ -281,12 +266,9 @@ class fun(commands.Cog):
             await msg.channel.send('No u')
 
     @commands.command(aliases=['bab'], help='boop')
-    async def boop(self,msg):
+    async def boop(self,msg,*,inp=None):
 
-        member = ''
-
-        for user in msg.message.mentions:
-            member = user
+        member = getuser(msg,inp)
 
         if msg.author == member:
             await msg.channel.send('thou shall not boop thyselef')
@@ -297,27 +279,20 @@ class fun(commands.Cog):
         else:
             await msg.channel.send(f'✅ Succesfully Booped `{member.name}`!')
 
-
     @commands.command(aliases=['m'],help='Sends a random meme from reddit')
     async def meme(self, msg:commands.Context):
 
         fetch:discord.Message = await msg.channel.send("fetching...")
-        
-    
 
         req = requests.request("GET",f'https://apis.duncte123.me/meme')
 
         meme = req.json()
 
-        emb = discord.Embed()
-
-        
-
+        emb = discord.Embed(timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')))
         emb.set_image(url=meme["data"]["image"])
         emb.add_field(name="Quality meme", value=f'[{meme["data"]["title"]}]({meme["data"]["url"]})')
 
         await fetch.edit(embed=emb)
-
 
 def setup(client):
     client.add_cog(fun(client))

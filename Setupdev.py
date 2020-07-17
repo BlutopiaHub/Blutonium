@@ -1,6 +1,6 @@
 ##############################################################################
-#   THIS IS THE SETUP FILE FOR DRIZZI                                        #
-#   OVER HERE YOU CAN SET UP YOUR OWN CREDENTIALS AND HOST DRIZZI YOURSELF!  #
+#   THIS IS THE SETUP FILE FOR blutonium                                      #
+#   OVER HERE YOU CAN SET UP YOUR OWN CREDENTIALS AND HOST blutonium YOURSELF!  #
 #   ALL LINES WITH A HASHTAG WILL BE IGNORED!                                #
 ##############################################################################
 
@@ -24,9 +24,11 @@ TOKEN = ""
 ### INUPT YOUR DEFAULT PREFIX HERE
 defprefix = ""
 
-### mysql server info
+### INPUT YOUR GENIUS TOKEN HERE
+genius = ''
 
-sqhost = ""
-squname = ""
-sqpassword = ""
-sqdbname = ""
+### postgresql server info
+dbuname = ''
+dbpword = ''
+
+### WHEN YOU ARE DONE RENAME THIS FILE TO "Setup.py"

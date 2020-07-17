@@ -1,16 +1,25 @@
-# Drizzi
+# Blutonium
 
-## Now OPEN SOURCE!
+## required dependencies
+### Use python 3.6.11 for Max compatibility 
 
-You can now see all my code as well as Host DRIZZI yourself
+``python3.6 -m pip install py-cpuinfo pg8000 speedtest-cli psutil discord.py[voice] jishaku pytz requests``
 
-## How to get started!
+## optional dependecies 
 
-Everything you need is in the README.py file!
+``python3.6 -m pip install tflearn tensorflow==1.14.0``
 
-[Check out my website!](https://drizzy.xyz)
+## Windows compatibility
+This bot was built, tested, and is run on on Ubuntu 18.04/20.04
+YOU WILL HAVE TO EDIT SOME FILES TO RUN THIS ON WINDOWS 10
+I cannot guarantee this bot to be fully functional on windows 10
+I will not be making a Windows 10 branch
 
-### NOTICE
-This bot is coded to  work with linux UBUNTU.
-While it may work well with other linux distros and macos,
-you will have to edit some commands for them to work with windows 10.
+## To set up the database
+I use PostgreSQL for my database. The server must be running on the same computer as the bot. Right now you will have to try and wing it but soon i will update the sql.py file to automatically set up the database proprely.
+
+I will also be creating a NO SQL branch in the near future.
+
+
+
+
