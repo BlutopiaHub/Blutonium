@@ -241,20 +241,20 @@ class levels(commands.Cog,name='Levels'):
 
 
     @commands.command()
-    async def levels(self,ctx):
-
-        levels = query_database(f"SELECT userid,currentlevel,currentxp,requiredxp FROM levels WHERE guildid = {ctx.guild.id} ORDER BY currentlevel DESC, currentxp DESC LIMIT 10")
-
-        print(levels)
-
-        emb = discord.Embed(title=f'{ctx.guild} Leaderboard',timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')),colour=0x36393F)
+    async def levels(self,ctx,glbl=None):
+        
+        if glbl is None:
+            levels = query_database(f"SELECT userid,currentlevel,currentxp,requiredxp FROM levels WHERE guildid = {ctx.guild.id} ORDER BY currentlevel DESC, currentxp DESC LIMIT 10")
+            
+        if glbl == 'global':
+            emb = discord.Embed(title=f'Global Leaderboard',timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')),colour=0x36393F)
+            levels = query_database(f"SELECT userid,currentlevel,currentxp,requiredxp FROM levels ORDER BY currentlevel DESC, currentxp DESC LIMIT 10")
+       
         emb.set_thumbnail(url=ctx.guild.icon_url)
 
         q = 1
 
         for x in levels:
-
-            print(x)
             
             user = getuser(ctx,x[0])
             
