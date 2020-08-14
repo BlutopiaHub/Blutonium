@@ -30,15 +30,18 @@ class events(commands.Cog,name='Events'):
 
     @commands.Cog.listener()
     async def on_guild_join(self,guild):
-        prefix = blutapi.getprefix(guild)
+        res = await blutapi.genguilddata(guild)
+        print(res)
 
     @commands.Cog.listener()
     async def on_ready(self):
 
-
         for guild in self.client.guilds:
-            bruh = blutapi.getprefix(guild)
 
+            res = await blutapi.genguilddata(guild)
+
+            print(res)
+            
         statuses = [f'over {len(set(self.client.get_all_members()))} users!', f'over {len(self.client.guilds)} guilds!','Forgot your prefix? @mention me!', 'over your mind']
 
 

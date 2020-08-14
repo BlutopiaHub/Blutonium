@@ -1,76 +1,32 @@
 from discord.ext import commands
-import discord
-import MySQLdb
+import discord, blutapi, pytz
+from discord.utils import get
+from dateutil.relativedelta import relativedelta
 from random import randrange
 from Setup import *
 import datetime
 
-def get_users():
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cur = db.cursor()
+def getuser(msg,inp):
 
-    sql = "SELECT id FROM points"
-    cur.execute(sql)
+    try:
+        member = get(msg.guild.members, id=int(inp))
+            
+    except:
 
-    query = cur.fetchall()
-    ids = []
-    
-    for x in query:
-        ids.append(x[0])
-    db.close()
+        if inp:
+            try:
+                member = get(msg.guild.members, name=inp)
+                    
+            except:
+                member = get(msg.guild.members, display_name=inp)
 
-    return ids
+        if  inp is None:
+            member : discord.Member = msg.author
+        else:
+            for men in msg.message.mentions:
+                member = men
+    return member
 
-def get_points(id):
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cur = db.cursor()
-
-    sql = f"SELECT points FROM points where id = {id}"
-
-    res = cur.execute(sql)
-    points = cur.fetchone()
-
-    if points is None:
-        points = [0,"lol" ]
-        sql = f"INSERT INTO points Values ({id}, 0)"
-        cur.execute(sql)
-        db.commit()
-        db.close()
-
-    return points[0]
-
-def set_points(id,ammount):
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cur = db.cursor()
-
-    sql = f"UPDATE points SET points = {ammount} where id = {id}"   
-
-    res = cur.execute(sql) 
-    db.commit()
-    db.close()
-    
-def get_daily(id):
-    db = MySQLdb.connect(host=sqhost, user=squname, passwd=sqpassword, db=sqdbname)
-    cur = db.cursor()
-
-    sql = f"SELECT prev FROM daily WHERE id = {id}"
-
-    res = cur.execute(sql)
-    prev = cur.fetchone()
-    today = datetime.datetime.today().strftime('%y%m%d')
-
-    if prev is None:
-        prev = [22,23]
-        sql = f"INSERT INTO daily VALUES ({id}, {today})"
-        cur.execute(sql)
-       
-    sql = f"UPDATE daily SET prev = {today} where id = {id}"
-    cur.execute(sql)
-       
-    db.commit()
-    db.close()
-
-    return prev[0]
 
 class points(commands.Cog,name="Points"):
 
@@ -83,19 +39,23 @@ class points(commands.Cog,name="Points"):
 
     @commands.command()
     @commands.is_owner()
-    async def setpoints(Self,ctx,user:discord.Member,ammount):
+    async def setpoints(Self,ctx,ammount,*,user = None):
+
+        user = getuser(ctx,user)
 
         ammount = int(ammount)
-        set_points(user.id,ammount)
+        blutapi.setpoints(user,ammount)
         await ctx.send(f"successfully set {user} to {ammount} points")
 
-    @commands.command()
-    async def gift(self, ctx, user:discord.Member, ammount):
+    @commands.command(aliases=["givepoints","give"])
+    async def gift(self, ctx,ammount, *, user=None):
+
+        user = getuser(ctx,user)
 
         ammount = int(ammount)
 
-        gifterpoints = int(get_points(ctx.author.id))
-        recepoints = int(get_points(user.id))
+        gifterpoints = int(blutapi.getpoints(ctx.author))
+        recepoints = int(blutapi.getpoints(user))
 
         if user == ctx.author:
             return await ctx.send("You cant gift yourself points")
@@ -113,24 +73,26 @@ class points(commands.Cog,name="Points"):
         rnewpoints = recepoints + ammount
 
         try:
-            set_points(ctx.author.id,gnewpoints)
-            set_points(user.id, rnewpoints)
+            blutapi.setpoints(ctx.author,gnewpoints)
+            blutapi.setpoints(user, rnewpoints)
             await ctx.send("Transaction Sucessful!")
         except Exception as err:
             await ctx.send(f"Transaction failed : {err}")
 
     @commands.command() 
     @commands.is_owner()
-    async def reset(self,ctx,user:discord.Member):
+    async def reset(self,ctx,*,user=None):
 
-        set_points(user.id, 0)
+        user = getuser(ctx,user)
+
+        blutapi.setpoints(user, 0)
 
         await ctx.send(f"Successfuly reset {user}")
 
-    @commands.command(help="Display your points")
+    @commands.command(help="Display your points",aliases=["balance", "bal"])
     async def points(self,ctx,param=None):
 
-        init = get_points(ctx.author.id)
+        init = blutapi.getpoints(ctx.author)
 
         if param is None:
             points = init
@@ -148,8 +110,8 @@ class points(commands.Cog,name="Points"):
     @commands.command(help="help feed your gambling addiction ")
     async def gamble(self,ctx, ammount):
 
-        userid = ctx.author.id
-        startingpoints = int(get_points(userid))
+        user = ctx.author
+        startingpoints = int(blutapi.getpoints(user))
         chance = randrange(0,2)
         ammount = ammount.lower()
 
@@ -192,52 +154,54 @@ class points(commands.Cog,name="Points"):
             else: 
                 await ctx.send(f"You gambled `{ammount}` And lost it all lol. You now have `{newpoints}` points")
 
-        set_points(userid, newpoints)
+        blutapi.setpoints(user, newpoints)
 
     @commands.command(help="claim your daily points")
     async def daily(self,ctx):
 
-        authorid = ctx.author.id
+        isClaimed = blutapi.getclaimed(ctx.author)
 
-        prev = get_daily(authorid)
-        today = int(datetime.datetime.today().strftime('%y%m%d'))
+        print(isClaimed[0])
 
-        if prev == today:
-            print("True")
-        
-        if prev == today:
-            await ctx.send(f"You have already claimed your daily points!")
+        if not isClaimed[0]:
+            
+            now = datetime.datetime.now()
+            nextclaimDelta = relativedelta(now,isClaimed[1])
+            
+            nextclaim = f"You can claim your points again in **{abs(nextclaimDelta.hours)} hours, {abs(nextclaimDelta.minutes)} minutes, {abs(nextclaimDelta.seconds)} seconds.**"
+
+            await ctx.send(nextclaim)
+
         else:
-            prevpoints = get_points(authorid)
-            newpoints = prevpoints + 100
-            set_points(authorid, newpoints)
 
-            await ctx.send("You have been awarded your daily 100 points!")
+            points = int(blutapi.getpoints(ctx.author))
+            points = points + 100
 
-    @commands.command(help="Shows the server leaderboard for points", aliases=["lb"])
+            blutapi.setpoints(ctx.author,points)
+
+            await ctx.send('You have claimed your daily **100 points**')
+
+
+    @commands.command(help="Shows the server leaderboard for points", aliases=["lb", "baltop"])
     async def leaderboard(self,ctx:commands.Context):
         
-        guild : discord.Guild = ctx.guild
-        members = []
+        lb = blutapi.getleaderboard(ctx.guild)
 
-        for member in guild.members[0:50]:
+        emb = discord.Embed(title=f'{ctx.guild} Leaderboard',timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')),colour=0x36393F)
+        emb.set_thumbnail(url=ctx.guild.icon_url)
 
-            members.append((str(member), get_points(member.id)))
+        q = 1
 
-        def takesecond(elem):
-            return elem[1]
+        for x in lb:
 
-        members.sort(key=takesecond,reverse=True)
+            user = getuser(ctx,x[0])
 
-        emb = discord.Embed()
+            emb.add_field(name=f"#{q} - {user}",value=f'{x[1]} Points', inline=False)
 
-        for x in members:
-            if x[1]==0:
-                pass 
-            else:
-                emb.add_field(name=x[0],value=f'{x[1]} points',inline=False)
+            q += 1
 
         await ctx.send(embed=emb)
+
 
 def setup(client):
     client.add_cog(points(client))

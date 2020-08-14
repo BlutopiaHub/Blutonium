@@ -1,4 +1,4 @@
-import discord
+import discord, blutapi
 from discord import Spotify
 from discord.ext import commands
 from discord.utils import get
@@ -98,52 +98,9 @@ class fun(commands.Cog,name="Fun"):
 
         member = getuser(msg,inp)
 
-        avatarurl = str(member.avatar_url).split('size=1024')[0] + 'size=1024'
-        memberimg = f'{member.id}.png'
-        membernitro = f'{member.id}.gif'
-        pth = os.getcwd()
-        dst = os.path.join(str(os.getcwd()),'Data/images')
-        src2 = os.path.join(dst,memberimg)
-        src2g = os.path.join(dst,membernitro)
-        src = os.path.join(str(pth),memberimg)
-        srcg = os.path.join(str(pth),membernitro)
-        images = os.listdir(dst)
-
-        async def sendav(src,src2,usr):
-            shutil.move(src2,pth)
-            await msg.channel.send(file=discord.File(usr))
-            shutil.move(src,dst)
-
-        def checkfornitro(user):
-            if user.is_avatar_animated():
-                return True
-            else:
-                return False
-
-        isnitro = checkfornitro(member)
-
-        pull = requests.get(avatarurl, allow_redirects=True)
-
-        if isnitro:
-            if membernitro in images:
-                await sendav(srcg,src2g,membernitro)
-                return
-            else:
-                open(f'{member.id}.gif', 'wb').write(pull.content)
-                shutil.move(srcg,dst)
-
-            await sendav(srcg,src2g,membernitro)
-            return
-        else:
-            if memberimg in images:
-                await sendav(src,src2,memberimg)
-                return
-            else:
-                open(f'{member.id}.png', 'wb').write(pull.content)
-                shutil.move(src,dst)
-
-            await sendav(src,src2,memberimg)
-            return
+        avatarurl = member.avatar_url
+        
+        await msg.send(avatarurl)
 
     @commands.command(help='Takes minecraft username and shows its head')
     async def mc(self,msg,*args):
@@ -153,30 +110,10 @@ class fun(commands.Cog,name="Fun"):
         memberhead = f'{skin}.png'
         link=f'https://mc-heads.net/avatar/{skin}'
 
-        pth = os.getcwd()
-        dst = os.path.join(str(os.getcwd()),'Data/minecraft')
-        src = os.path.join(str(pth),memberhead)
-        src2 = os.path.join(dst,memberhead)
-        heads = os.listdir(dst)
-        pull = requests.get(link, allow_redirects=True)
-
-        if memberhead in heads:
-            shutil.move(src2,pth)
-            await msg.channel.send(file=discord.File(memberhead))
-
-            shutil.move(src,dst)
-            return
-        else:
-            open(memberhead,'wb').write(pull.content)
-            shutil.move(src,dst)
-
-        shutil.move(src2,pth)
-        await msg.channel.send(file=discord.File(memberhead))
-
-        shutil.move(src,dst)
+        await msg.send(link)
 
     @commands.command(aliases=['en','bigify','big'], help = 'enlarges any discord custom emoji')
-    async def enlarge(self,msg,*emojis: discord.Emoji):
+    async def enlarge(self,msg,*emojis: discord.PartialEmoji):
 
         if len(emojis) > 1:
             return await msg.channel.send('Please only user 1 emoji')
@@ -187,24 +124,10 @@ class fun(commands.Cog,name="Fun"):
 
         for emoji in emojis:
 
-            emojfile = f'{emoji.id}.png'
+            
             url = emoji.url
-            src = os.path.join(str(os.getcwd()), f'{emoji.id}.png')
-            src2 = os.path.join(dst,f'{emoji.id}.png')
-            pull = requests.get(url, allow_redirects=True)
 
-            if emojfile in cached:
-                shutil.move(src2,pth)
-                await msg.channel.send(file=discord.File(emojfile))
-                shutil.move(src,dst)
-                return
-            else:
-                open(emojfile, 'wb').write(pull.content)
-                shutil.move(src,dst)
-
-        shutil.move(src2,pth)
-        await msg.channel.send(file=discord.File(emojfile))
-        shutil.move(src,dst)
+            await msg.send(url)
 
     @commands.command(help='shows user spotify status')
     async def spotify(self,msg,*,inp=None):
@@ -274,7 +197,9 @@ class fun(commands.Cog,name="Fun"):
             await msg.channel.send('thou shall not boop thyselef')
             return
 
-        if msg.message.content.startswith('dr/bab'):
+        prefix = blutapi.getprefix(msg.guild)
+
+        if msg.message.content.startswith(f'{prefix}bab'):
             await msg.channel.send(f'✅ Succesfully Babbed `{member.name}`!')
         else:
             await msg.channel.send(f'✅ Succesfully Booped `{member.name}`!')

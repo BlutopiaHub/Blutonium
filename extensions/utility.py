@@ -118,7 +118,7 @@ class utility(commands.Cog,name='Utility'):
     @commands.command(aliases=['stats','binfo','about'], help='Gathers and displays Bot info')
     async def botinfo(self,msg):
         pythonVersion = platform.python_version()
-        clientVersion = '1.15.1'
+        clientVersion = '1.16.1'
         dpyVersion = discord.__version__
         serverCount = len(self.client.guilds)
         memberCount = len(set(self.client.get_all_members()))
@@ -145,11 +145,14 @@ class utility(commands.Cog,name='Utility'):
 
     @commands.command(aliases=['pong'], help= 'Shows Bot latency')
     async def ping(self,msg):
+        support = get(self.client.guilds , id=629436501964619776)
+        emoji = get(support.emojis, name="Blutonium_loading")
+        msgc : discord.Message = await msg.send(emoji)
         time_1 = time.perf_counter()
         await msg.trigger_typing()
         time_2 = time.perf_counter()
         ping = round((time_2-time_1)*1000)
-        await msg.send(f"⏳ Pong! My ping is `{ping}ms`")
+        await msgc.edit(content=f"⏳ Pong! My ping is `{ping}ms`")
 
     @commands.command(aliases=['sic','sav'])
     async def servericon(self,msg:commands.Context):
@@ -276,6 +279,8 @@ class utility(commands.Cog,name='Utility'):
         joined = joinpos(member,msg.guild)
 
         def checkfornitro(user):
+            nitro = False
+            
             if user.is_avatar_animated():
                 nitro = True
             

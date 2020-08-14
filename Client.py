@@ -2,7 +2,7 @@ from discord.ext import commands
 from discord.utils import get
 import json, discord
 import random , os
-from Setup import *
+from Setup import TOKEN, ownerid
 import asyncio
 import blutapi
 
@@ -58,9 +58,26 @@ async def on_message(msg):
 
     bl = blutapi.get_blacklist()
     if msg.author.id not in bl:
-        return await client.process_commands(msg)
+        
+        await client.process_commands(msg)
+
+        author = msg.author
+
+        def check(before, after):
+            return before.content == msgc and before.author == author and after.content != before.content
+
+        try:
+            before, after = await client.wait_for('message_edit', timeout=5.0, check=check)
+        except asyncio.TimeoutError:
+            return
+        else:
+            return await client.process_commands(after)
+
     else:
         if msgc.startswith(prefix):
-           return await msg.channel.send("You have been blacklisted from using this bot")
+
+            await msg.channel.send("You have been blacklisted from using this bot")
+        
+
 
 client.run(TOKEN)

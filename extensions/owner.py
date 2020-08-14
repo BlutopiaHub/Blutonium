@@ -1,4 +1,4 @@
-import discord, pytz
+import discord, pytz, pg8000
 from discord.ext import commands
 from discord.utils import get
 import humanize as h
@@ -72,6 +72,12 @@ class owner(commands.Cog,name='Owner'):
     @commands.is_owner()
     async def develloper(self,ctx,*kwargs):
 
+        if kwargs[0] == 'sql':
+
+            res = blutapi.query_database(" ".join(kwargs[1:]))
+
+            await ctx.send(res)
+ 
         if kwargs[0] == 'edit':
             ori:discord.Message = ctx.message
             msg:discord.Message= self.last[ctx.guild.id]
@@ -327,18 +333,22 @@ class owner(commands.Cog,name='Owner'):
             'discord': discord,
             'commands': commands,
             'ctx': msg,
-            '__import__': __import__
+            '__import__': __import__,
+            'sqldb': dbuname,
+            'sqldbp': dbpassword
         }
 
         exec(compile(parsed, filename="<ast>", mode="exec"), env)
 
         result = (await eval(f"{fn_name}()", env))
         ress = type(result)
-        emb = discord.Embed(title='✅  Eval',colour=discord.Colour.green(), description='Execution was successfull')
+        support = get(self.client.guilds , id=629436501964619776)
+        emoji = get(support.emojis, name="BlutoCheck")
+        emb = discord.Embed(title=f'{emoji}  Eval',colour=discord.Colour.green(), description='Execution was successfull')
         emb.add_field(name=f'Output Console', value = f'```{result}```')
         emb.add_field(name = 'type', value=f'```{ress}```')
 
-        await msg.channel.send(embed=emb,delete_after=10)
+        await msg.channel.send(embed=emb)
 
     @eval.error
     async def ev_error(self,msg,error):
