@@ -548,26 +548,28 @@ def setaccent(user, color):
 
     return
 
-def getuser(msg,inp):
+def getuser(client,inp):
+
+    members = client.get_all_members()
 
     try:
-        member = get(msg.guild.members, id=int(inp))
+        member = get(members, id=int(inp))
             
     except:
 
         if inp:
             
-            member = get(msg.guild.members, name=inp)
+            member = get(members, name=inp)
                     
             if member is None:
 
-                member = get(msg.guild.members, display_name=inp)
+                member = get(members, display_name=inp)
             
             if member is None:
                 try:
                     bro = inp.split('#')
 
-                    member = get(msg.guild.members, name=bro[0], discriminator=bro[1] )
+                    member = get(members, name=bro[0], discriminator=bro[1] )
                 except:
                     pass
 

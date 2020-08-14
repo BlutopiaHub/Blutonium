@@ -16,6 +16,9 @@ class levels(commands.Cog,name='Levels'):
     
     @commands.Cog.listener()
     async def on_message(self,msg):
+
+        if msg.author.bot:
+            return
         
         ctx = await self.client.get_context(msg)
 
@@ -38,7 +41,7 @@ class levels(commands.Cog,name='Levels'):
         colors = (('green', '#27d600'), ('blue', '#0064d6'), ('red','#e30000'), ('white', '#ffffff'), ('black', '#000000'), ('gold','#ffd500'), ('pink', '#ff75fa'), ('purple', '#8400ff'))
         try:
 
-            user = getuser(ctx,user)
+            user = getuser(self.client,user)
             leveldata = getleveldata(user,ctx.guild)[0]
 
             masksize = (700,700)
@@ -256,13 +259,15 @@ class levels(commands.Cog,name='Levels'):
 
         for x in levels:
             
-            user = getuser(ctx,x[0])
+            user = getuser(self.client,x[0])
             
             if x[1] == 0:
                 pass
             else:
-
-                emb.add_field(name=f'#{q} - {user.mention}', value=f"Level {x[1]} | {x[2]}/{x[3]}xp", inline=False)
+                try:
+                    emb.add_field(name=f'#{q} - Level {x[1]} | {x[2]}/{x[3]}xp ', value=f"{user.mention}", inline=False)
+                except:
+                    emb.add_field(name=f'#{q} - Level {x[1]} | {x[2]}/{x[3]}xp ', value=f"{user}", inline=False)
 
             q += 1
         

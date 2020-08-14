@@ -6,27 +6,7 @@ import math, time, datetime, pytz
 import os, requests, Setup, shutil
 from random import randrange
 import humanize as h
-
-def getuser(msg,inp):
-
-    try:
-        member = get(msg.guild.members, id=int(inp))
-            
-    except:
-
-        if inp:
-            try:
-                member = get(msg.guild.members, name=inp)
-                    
-            except:
-                member = get(msg.guild.members, display_name=inp)
-
-        if  inp is None:
-            member : discord.Member = msg.author
-        else:
-            for men in msg.message.mentions:
-                member = men
-    return member
+from blutapi import getuser
 
 def request_song_info(song,artist):
     base_url= 'https://api.genius.com'
@@ -48,7 +28,7 @@ class fun(commands.Cog,name="Fun"):
     @commands.command(help='The ultimate judge')
     async def pp(self,ctx,*,usr=None): 
 
-        user = getuser(ctx,usr)
+        user = getuser(self.client,usr)
         
 
         length = randrange(1, 25)
@@ -96,7 +76,7 @@ class fun(commands.Cog,name="Fun"):
     @commands.command(aliases=['av'], help='Shows user avatar')
     async def avatar(self,msg,*,inp=None):
 
-        member = getuser(msg,inp)
+        member = getuser(self.client,inp)
 
         avatarurl = member.avatar_url
         
@@ -135,7 +115,7 @@ class fun(commands.Cog,name="Fun"):
         def chop_microseconds(delta):
             return delta - datetime.timedelta(microseconds=delta.microseconds)    
 
-        member = getuser(msg,inp)
+        member = getuser(self.client,inp)
 
         for activity in member.activities:
 
@@ -169,7 +149,7 @@ class fun(commands.Cog,name="Fun"):
         bot = self.client.user.id
         chance = randrange(0,2)
 
-        member = getuser(msg,inp)
+        member = getuser(self.client,inp)
 
         if msg.author == member:
             await msg.channel.send('lmao u just called urslef gey')
@@ -191,7 +171,7 @@ class fun(commands.Cog,name="Fun"):
     @commands.command(aliases=['bab'], help='boop')
     async def boop(self,msg,*,inp=None):
 
-        member = getuser(msg,inp)
+        member = getuser(self.client,inp)
 
         if msg.author == member:
             await msg.channel.send('thou shall not boop thyselef')
