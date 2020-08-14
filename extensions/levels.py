@@ -245,7 +245,7 @@ class levels(commands.Cog,name='Levels'):
         
         if glbl is None:
             levels = query_database(f"SELECT userid,currentlevel,currentxp,requiredxp FROM levels WHERE guildid = {ctx.guild.id} ORDER BY currentlevel DESC, currentxp DESC LIMIT 10")
-            
+            emb = discord.Embed(title=f'{ctx.guild} Leaderboard',timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')),colour=0x36393F)
         if glbl == 'global':
             emb = discord.Embed(title=f'Global Leaderboard',timestamp=datetime.datetime.now(tz=pytz.timezone('US/Eastern')),colour=0x36393F)
             levels = query_database(f"SELECT userid,currentlevel,currentxp,requiredxp FROM levels ORDER BY currentlevel DESC, currentxp DESC LIMIT 10")
@@ -262,7 +262,7 @@ class levels(commands.Cog,name='Levels'):
                 pass
             else:
 
-                emb.add_field(name=f'#{q} - {user}', value=f"Level {x[1]} | {x[2]}/{x[3]}xp", inline=False)
+                emb.add_field(name=f'#{q} - {user.mention}', value=f"Level {x[1]} | {x[2]}/{x[3]}xp", inline=False)
 
             q += 1
         
