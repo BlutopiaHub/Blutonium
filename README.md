@@ -1,5 +1,20 @@
 # Blutonium
 
+
+# this discord bot is discontinued
+
+check out blutonium 2.0 under development. https://github.com/BlutopiaHub/Blutonium-2.0
+
+
+
+
+
+
+# old readme
+
+
+
+
 ## required dependencies
 ### Use python 3.6.11 for Max compatibility 
 
@@ -19,6 +34,8 @@ I will not be making a Windows 10 branch
 I use PostgreSQL for my database. The server must be running on the same computer as the bot. Right now you will have to try and wing it but soon i will update the sql.py file to automatically set up the database proprely.
 
 I will also be creating a NO SQL branch in the near future.
+
+
 
 
 
